@@ -1,0 +1,15 @@
+DEBUG = False
+SECRET_KEY = ''
+
+API_URL = 'https://webcourses2c.test.instructure.com/api/v1/'
+API_KEY = ''
+
+PYLTI_CONFIG = {
+    'consumers': {
+        "key": {
+            "secret": "secret"
+        }
+    }
+}
+
+TIME_ZONE = 'US/Eastern'

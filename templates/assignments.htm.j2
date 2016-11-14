@@ -1,0 +1,107 @@
+{% extends "base.htm.j2" %}
+
+{% block custom_css %}
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='bootstrap-datetimepicker.css') }}">
+{% endblock %}
+
+{% block content %}
+
+<h1>Assignments for {{ course.name }}</h1>
+
+<form>
+<table id="assignment_table" class="display">
+<thead>
+	<tr>
+		<th scope="col">ID</th>
+		<th scope="col">Title</th>
+		<th scope="col">Type</th>
+		<th scope="col">Due</th>
+		<th scope="col">Available from</th>
+		<th scope="col">Available until</th>
+		<th scope="col">Show Answers</th>
+		<th scope="col">Hide Answers</th>
+		<th scope="col">Published</th>
+	</tr>
+</thead>
+<tbody>
+	{% for assignment in assignments %}
+	<tr>
+		<td>{{ assignment.id }}</td>
+		<td>{{ assignment.name }}</td>
+
+		<td>
+		{% if assignment.is_quiz_assignment %}
+			Quiz
+		{% else %}
+			Assignment
+		{% endif %}
+		</td>
+		<td>
+			<div class='input-group date picker'>
+				<input type="text" class="form-control" value=
+				{% if assignment.due_at_date %}
+					"{{ assignment.due_at_date | datetimeformat }}"
+				{% endif %}
+				>
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+		</td>
+		<td>
+			<div class='input-group date picker'>
+				<input type="text" class="form-control" value="{{ assignment.unlock_at }}">
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+		</td>
+		<td>
+			<div class='input-group date picker'>
+				<input type="text" class="form-control" value="{{ assignment.lock_at }}">
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+		</td>
+		<td>
+			<div class='input-group date picker'>
+				<input type="text" class="form-control" value="">
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+		</td>
+		<td>
+			<div class='input-group date picker'>
+				<input type="text" class="form-control" value="">
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+		</td>
+		<td>
+		{% if assignment.published %}
+			<input type="checkbox" class="form-check" checked>
+		{% else %}
+			<input type="checkbox" class="form-check">
+		{% endif %}
+		</td>
+	</tr>	
+	{% endfor %}
+</tbody>
+</table>
+<input class="btn btn-success" type="submit">
+</form>
+
+{% endblock %}
+
+{% block custom_js %}
+	<script type="text/javascript" src="{{ url_for('static', filename='moment.min.js') }}"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='bootstrap-datetimepicker.js') }}"></script>
+	<script type="text/javascript">
+		$(function () {
+			$('.picker').datetimepicker();
+		});
+	</script>
+{% endblock %}
