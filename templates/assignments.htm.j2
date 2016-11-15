@@ -9,36 +9,31 @@
 <h1>Assignments for {{ course.name }}</h1>
 
 <form>
-<table id="assignment_table" class="display">
+<table id="assignment_table" class="table table-striped" class="container">
 <thead>
-	<tr>
-		<th scope="col">ID</th>
-		<th scope="col">Title</th>
-		<th scope="col">Type</th>
-		<th scope="col">Due</th>
-		<th scope="col">Available from</th>
-		<th scope="col">Available until</th>
-		<th scope="col">Show Answers</th>
-		<th scope="col">Hide Answers</th>
-		<th scope="col">Published</th>
+	<tr class="row">
+		<th scope="col" class="col-md-2">Assignment</th>
+		<th scope="col" class="col-md-3">Due</th>
+		<th scope="col" class="col-md-3">Availability</th>
+		<th scope="col" class="col-md-3">Answer Visibility</th>
+		<th scope="col" class="col-md-1">Published</th>
 	</tr>
 </thead>
 <tbody>
 	{% for assignment in assignments %}
-	<tr>
-		<td>{{ assignment.id }}</td>
-		<td>{{ assignment.name }}</td>
-
-		<td>
-		{% if assignment.is_quiz_assignment %}
-			Quiz
-		{% else %}
-			Assignment
-		{% endif %}
+	<tr class="row">
+		<td class="col-md-2">
+			<p><strong>{{ assignment.name }} ({{ assignment.id }})</strong></p>
+			{% if assignment.is_quiz_assignment %}
+				<p>Quiz</p>
+			{% else %}
+				<p>Assignment</p>
+			{% endif %}
 		</td>
-		<td>
+		<td class="col-md-3">
+			<label for="{{ assignment.id }}_due">Due At:</label>
 			<div class='input-group date picker'>
-				<input type="text" class="form-control" value=
+				<input name="{{ assignment.id }}_due" type="text" class="form-control" value=
 				{% if assignment.due_at_date %}
 					"{{ assignment.due_at_date | datetimeformat }}"
 				{% endif %}
@@ -48,44 +43,45 @@
 				</span>
 			</div>
 		</td>
-		<td>
+		<td class="col-md-3">
+			<label for="{{ assignment.id }}_from">Available From:</label>
 			<div class='input-group date picker'>
-				<input type="text" class="form-control" value="{{ assignment.unlock_at }}">
+				<input name="{{ assignment.id }}_from" type="text" class="form-control" value="{{ assignment.unlock_at }}">
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+			<label for="{{ assignment.id }}_until">Available Until:</label>
+			<div class='input-group date picker'>
+				<input name="{{ assignment.id }}_until" type="text" class="form-control" value="{{ assignment.lock_at }}">
 				<span class="input-group-addon">
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>
 			</div>
 		</td>
-		<td>
+		<td class="col-md-3">
+			<label for="{{ assignment.id }}_show">Show Answers:</label>
 			<div class='input-group date picker'>
-				<input type="text" class="form-control" value="{{ assignment.lock_at }}">
+				<input name="{{ assignment.id }}_show" type="text" class="form-control" value="">
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+			<label for="{{ assignment.id }}_hide">Hide Answers:</label>
+			<div class='input-group date picker'>
+				<input name="{{ assignment.id }}_hide" type="text" class="form-control" value="">
 				<span class="input-group-addon">
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>
 			</div>
 		</td>
-		<td>
-			<div class='input-group date picker'>
-				<input type="text" class="form-control" value="">
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
-		</td>
-		<td>
-			<div class='input-group date picker'>
-				<input type="text" class="form-control" value="">
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
-		</td>
-		<td>
-		{% if assignment.published %}
-			<input type="checkbox" class="form-check" checked>
-		{% else %}
-			<input type="checkbox" class="form-check">
-		{% endif %}
+		<td class="col-md-1">
+			<label for="{{ assignment.id }}_published"></label>
+			{% if assignment.published %}
+				<input name="{{ assignment.id }}_published" type="checkbox" class="form-check" checked>
+			{% else %}
+				<input name="{{ assignment.id }}_published" type="checkbox" class="form-check">
+			{% endif %}
 		</td>
 	</tr>	
 	{% endfor %}
