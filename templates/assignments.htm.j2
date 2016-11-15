@@ -8,86 +8,81 @@
 
 <h1>Assignments for {{ course.name }}</h1>
 
-<form>
-<table id="assignment_table" class="table table-striped" class="container">
-<thead>
-	<tr class="row">
-		<th scope="col" class="col-md-2">Assignment</th>
-		<th scope="col" class="col-md-3">Due</th>
-		<th scope="col" class="col-md-3">Availability</th>
-		<th scope="col" class="col-md-3">Answer Visibility</th>
-		<th scope="col" class="col-md-1">Published</th>
-	</tr>
-</thead>
-<tbody>
+<form class="container" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
 	{% for assignment in assignments %}
-	<tr class="row">
-		<td class="col-md-2">
+	<div class="row {{ loop.cycle('odd', '') }}">
+		<div class="col-xs-12 col-sm-6 col-md-3">
 			<p><strong>{{ assignment.name }} ({{ assignment.id }})</strong></p>
 			{% if assignment.is_quiz_assignment %}
 				<p>Quiz</p>
 			{% else %}
 				<p>Assignment</p>
 			{% endif %}
-		</td>
-		<td class="col-md-3">
-			<label for="{{ assignment.id }}_due">Due At:</label>
+		</div>
+		<div class="col-xs-12 col-sm-6 col-md-3">
+			<label for="{{ assignment.id }}-due_at">Due At:</label>
 			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}_due" type="text" class="form-control" value=
+				<input name="{{ assignment.id }}-due_at" type="text" class="form-control"
 				{% if assignment.due_at_date %}
-					"{{ assignment.due_at_date | datetimeformat }}"
+					value="{{ assignment.due_at_date | utc_datetime_to_local_str }}"
 				{% endif %}
 				>
 				<span class="input-group-addon">
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>
 			</div>
-		</td>
-		<td class="col-md-3">
-			<label for="{{ assignment.id }}_from">Available From:</label>
-			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}_from" type="text" class="form-control" value="{{ assignment.unlock_at }}">
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
-			<label for="{{ assignment.id }}_until">Available Until:</label>
-			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}_until" type="text" class="form-control" value="{{ assignment.lock_at }}">
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
-		</td>
-		<td class="col-md-3">
-			<label for="{{ assignment.id }}_show">Show Answers:</label>
-			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}_show" type="text" class="form-control" value="">
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
-			<label for="{{ assignment.id }}_hide">Hide Answers:</label>
-			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}_hide" type="text" class="form-control" value="">
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
-		</td>
-		<td class="col-md-1">
-			<label for="{{ assignment.id }}_published"></label>
+			<label for="{{ assignment.id }}-published">Published:</label>
+			<input name="{{ assignment.id }}-published" type="checkbox" class="form-check"
 			{% if assignment.published %}
-				<input name="{{ assignment.id }}_published" type="checkbox" class="form-check" checked>
-			{% else %}
-				<input name="{{ assignment.id }}_published" type="checkbox" class="form-check">
+				checked
 			{% endif %}
-		</td>
-	</tr>	
+			>
+		</div>
+		<div class="col-xs-12 col-sm-6 col-md-3">
+			<label for="{{ assignment.id }}-unlock_at">Available From:</label>
+			<div class='input-group date picker'>
+				<input name="{{ assignment.id }}-unlock_at" type="text" class="form-control"
+				{% if assignment.unlock_at_date %}
+					value="{{ assignment.unlock_at_date | utc_datetime_to_local_str }}"
+				{% endif %}
+				>
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+			<label for="{{ assignment.id }}-lock_at">Available Until:</label>
+			<div class='input-group date picker'>
+				<input name="{{ assignment.id }}-lock_at" type="text" class="form-control"
+				{% if assignment.lock_date_at %}
+					value="{{ assignment.lock_at_date | utc_datetime_to_local_str }}"
+				{% endif %}
+				>
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+		</div>
+		<div class="col-xs-12 col-sm-6 col-md-3">
+			{% if assignment.is_quiz_assignment %}
+			<label for="{{ assignment.id }}-show_correct_answers_at">Show Answers:</label>
+			<div class='input-group date picker'>
+				<input name="{{ assignment.id }}-show_correct_answers_at" type="text" class="form-control" value="">
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+			<label for="{{ assignment.id }}-hide_correct_answers_at">Hide Answers:</label>
+			<div class='input-group date picker'>
+				<input name="{{ assignment.id }}-hide_correct_answers_at" type="text" class="form-control" value="">
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+			{% endif %}
+		</div>
+	</div>
 	{% endfor %}
-</tbody>
-</table>
-<input class="btn btn-success" type="submit">
+	<input class="btn btn-success" type="submit">
 </form>
 
 {% endblock %}
