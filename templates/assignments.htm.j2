@@ -59,7 +59,7 @@
 			<label for="{{ assignment.id }}-lock_at">Available Until:</label>
 			<div class='input-group date picker'>
 				<input id="{{ assignment.id }}-lock_at" name="{{ assignment.id }}-lock_at" type="text" class="form-control"
-				{% if assignment.lock_date_at %}
+				{% if assignment.lock_at_date %}
 					value="{{ assignment.lock_at_date | utc_datetime_to_local_str }}"
 				{% endif %}
 				>
