@@ -2,4 +2,4 @@
 *.pyc
 env/
 config.py
-
+*.log

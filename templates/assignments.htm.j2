@@ -11,9 +11,15 @@
 <form class="container" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
 	{% for assignment in assignments %}
 	<div class="row {{ loop.cycle('odd', '') }}">
+		{% if assignment.quiz_id is defined %}
+			<input id="{{ assignment.id }}-assignment_type" name="{{ assignment.id }}-assignment_type" type="hidden" value="quiz">
+			<input id="{{ assignment.id }}-quiz_id" name="{{ assignment.id }}-quiz_id" type="hidden" value="{{ assignment.quiz_id }}">
+		{% else %}
+			<input id="{{ assignment.id }}-assignment_type" name="{{ assignment.id }}-assignment_type" type="hidden" value="assignment">
+		{% endif %}
 		<div class="col-xs-12 col-sm-6 col-md-3">
 			<p><strong>{{ assignment.name }} ({{ assignment.id }})</strong></p>
-			{% if assignment.is_quiz_assignment %}
+			{% if assignment.quiz_id is defined %}
 				<p>Quiz</p>
 			{% else %}
 				<p>Assignment</p>
@@ -22,7 +28,7 @@
 		<div class="col-xs-12 col-sm-6 col-md-3">
 			<label for="{{ assignment.id }}-due_at">Due At:</label>
 			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}-due_at" type="text" class="form-control"
+				<input id="{{ assignment.id }}-due_at" name="{{ assignment.id }}-due_at" type="text" class="form-control"
 				{% if assignment.due_at_date %}
 					value="{{ assignment.due_at_date | utc_datetime_to_local_str }}"
 				{% endif %}
@@ -31,8 +37,8 @@
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>
 			</div>
-			<label for="{{ assignment.id }}-published">Published:</label>
-			<input name="{{ assignment.id }}-published" type="checkbox" class="form-check"
+			<label for="{{ assignment.id }}-published">Published:</label><br />
+			<input id="{{ assignment.id }}-published" name="{{ assignment.id }}-published" type="checkbox" class="form-check"
 			{% if assignment.published %}
 				checked
 			{% endif %}
@@ -41,7 +47,7 @@
 		<div class="col-xs-12 col-sm-6 col-md-3">
 			<label for="{{ assignment.id }}-unlock_at">Available From:</label>
 			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}-unlock_at" type="text" class="form-control"
+				<input id="{{ assignment.id }}-unlock_at" name="{{ assignment.id }}-unlock_at" type="text" class="form-control"
 				{% if assignment.unlock_at_date %}
 					value="{{ assignment.unlock_at_date | utc_datetime_to_local_str }}"
 				{% endif %}
@@ -52,7 +58,7 @@
 			</div>
 			<label for="{{ assignment.id }}-lock_at">Available Until:</label>
 			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}-lock_at" type="text" class="form-control"
+				<input id="{{ assignment.id }}-lock_at" name="{{ assignment.id }}-lock_at" type="text" class="form-control"
 				{% if assignment.lock_date_at %}
 					value="{{ assignment.lock_at_date | utc_datetime_to_local_str }}"
 				{% endif %}
@@ -63,17 +69,17 @@
 			</div>
 		</div>
 		<div class="col-xs-12 col-sm-6 col-md-3">
-			{% if assignment.is_quiz_assignment %}
+			{% if assignment.quiz_id is defined %}
 			<label for="{{ assignment.id }}-show_correct_answers_at">Show Answers:</label>
 			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}-show_correct_answers_at" type="text" class="form-control" value="">
+				<input id="{{ assignment.id }}-show_correct_answers_at" name="{{ assignment.id }}-show_correct_answers_at" type="text" class="form-control" value="{{ assignment.show_correct_answers_at_date }}">
 				<span class="input-group-addon">
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>
 			</div>
 			<label for="{{ assignment.id }}-hide_correct_answers_at">Hide Answers:</label>
 			<div class='input-group date picker'>
-				<input name="{{ assignment.id }}-hide_correct_answers_at" type="text" class="form-control" value="">
+				<input id="{{ assignment.id }}-hide_correct_answers_at" name="{{ assignment.id }}-hide_correct_answers_at" type="text" class="form-control" value="{{ assignment.hide_correct_answers_at_date }}">
 				<span class="input-group-addon">
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>

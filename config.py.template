@@ -13,3 +13,10 @@ PYLTI_CONFIG = {
 }
 
 TIME_ZONE = 'US/Eastern'
+LOCAL_TIME_FORMAT = '%m/%d/%Y %I:%M %p'
+
+LOG_FILE = 'due_date_changer.log'
+LOG_FORMAT = '%(asctime)s [%(levelname)s] {%(filename)s:%(lineno)d} %(message)s'
+LOG_LEVEL = 'WARNING'
+LOG_MAX_BYTES = 10000
+LOG_BACKUP_COUNT = 1
