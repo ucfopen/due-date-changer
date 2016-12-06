@@ -18,5 +18,5 @@ LOCAL_TIME_FORMAT = '%m/%d/%Y %I:%M %p'
 LOG_FILE = 'due_date_changer.log'
 LOG_FORMAT = '%(asctime)s [%(levelname)s] {%(filename)s:%(lineno)d} %(message)s'
 LOG_LEVEL = 'WARNING'
-LOG_MAX_BYTES = 10000
+LOG_MAX_BYTES = 1024 * 1024 * 5  # 5 MB
 LOG_BACKUP_COUNT = 1

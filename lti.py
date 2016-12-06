@@ -72,11 +72,11 @@ def show_assignments(course_id, lti=lti):
         if hasattr(assignment, 'quiz_id'):
             quiz = quiz_dict.get(assignment.quiz_id)
             if hasattr(quiz, 'show_correct_answers_at_date'):
-                assignment.show_correct_answers_at_date = utc_datetime_to_local_str(
+                assignment.show_correct_answers_at_date = datetime_localize(
                     quiz.show_correct_answers_at_date
                 )
             if hasattr(quiz, 'hide_correct_answers_at_date'):
-                assignment.hide_correct_answers_at_date = utc_datetime_to_local_str(
+                assignment.hide_correct_answers_at_date = datetime_localize(
                     quiz.hide_correct_answers_at_date
                 )
         assignment_quiz_list.append(assignment)
@@ -203,7 +203,7 @@ def xml():
 
 
 @app.template_filter()
-def utc_datetime_to_local_str(utc_datetime, format=config.LOCAL_TIME_FORMAT):
+def datetime_localize(utc_datetime, format=config.LOCAL_TIME_FORMAT):
     if not utc_datetime.tzinfo:
         # Localize to UTC if there is no timezone information.
         utc_datetime = utc.localize(utc_datetime)

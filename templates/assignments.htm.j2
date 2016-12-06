@@ -30,7 +30,7 @@
 			<div class='input-group date picker picker-due'>
 				<input id="{{ assignment.id }}-due_at" name="{{ assignment.id }}-due_at" type="text" class="form-control" title="Date and Time at which the assignment is due."
 				{% if assignment.due_at_date %}
-					value="{{ assignment.due_at_date | utc_datetime_to_local_str }}"
+					value="{{ assignment.due_at_date | datetime_localize }}"
 				{% endif %}
 				>
 				<span class="input-group-addon">
@@ -62,7 +62,7 @@
 			<div class='input-group date picker'>
 				<input id="{{ assignment.id }}-unlock_at" name="{{ assignment.id }}-unlock_at" type="text" class="form-control" title="Date and Time at which the assignment is unlocked."
 				{% if assignment.unlock_at_date %}
-					value="{{ assignment.unlock_at_date | utc_datetime_to_local_str }}"
+					value="{{ assignment.unlock_at_date | datetime_localize }}"
 				{% endif %}
 				>
 				<span class="input-group-addon">
@@ -73,7 +73,7 @@
 			<div class='input-group date picker'>
 				<input id="{{ assignment.id }}-lock_at" name="{{ assignment.id }}-lock_at" type="text" class="form-control" title="Date and Time at which the assignment is locked."
 				{% if assignment.lock_at_date %}
-					value="{{ assignment.lock_at_date | utc_datetime_to_local_str }}"
+					value="{{ assignment.lock_at_date | datetime_localize }}"
 				{% endif %}
 				>
 				<span class="input-group-addon">
