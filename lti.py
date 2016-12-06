@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
+import json
 import logging
 from logging.handlers import RotatingFileHandler
 import re
@@ -90,8 +91,32 @@ def show_assignments(course_id, lti=lti):
 @app.route('/course/<course_id>/update', methods=['POST'])
 @lti(error=error, request='session', role='staff', app=app)
 def update_assignments(course_id, lti=lti):
-    # if not request.is_xhr:
-    #     pass  # ajax only?
+
+    def fix_date(value):
+        try:
+            value = datetime.strptime(value, config.LOCAL_TIME_FORMAT)
+            value = local_tz.localize(value)
+            return value.isoformat()
+        except ValueError:
+            # Not a valid time. Just ignore.
+            return ''
+
+    def error_json(assignment_id, updated_list):
+        msg = 'There was an error editing one of the assignments. (ID: {})'
+        msg.format(assignment_id)
+        if len(updated_list) > 0:
+            msg += ' {} assignments have been updated successfully.'.format(
+                len(updated_list)
+            )
+
+        return json.dumps({
+            'error': True,
+            'message': msg,
+            'updated': updated_list,
+        })
+
+    if not request.is_xhr:
+        return render_template('error.htm.j2', message='Non-AJAX requests not allowed.')
 
     post_data = request.form
 
@@ -105,15 +130,7 @@ def update_assignments(course_id, lti=lti):
         assignment_id, field_name = key.split('-')
         assignment_field_map[assignment_id].update({field_name: value})
 
-    def fix_date(value):
-        try:
-            value = datetime.strptime(value, config.LOCAL_TIME_FORMAT)
-            value = local_tz.localize(value)
-            return value.isoformat()
-        except ValueError:
-            # Not a valid time. Just ignore.
-            return ''
-
+    updated_list = []
     for assignment_id, field in assignment_field_map.iteritems():
         assignment_type = field.get('assignment_type', 'assignment')
         quiz_id = field.get('quiz_id')
@@ -142,22 +159,39 @@ def update_assignments(course_id, lti=lti):
             try:
                 quiz = course.get_quiz(quiz_id)
                 quiz.edit(quiz=payload)
+                updated_list.append({
+                    'id': assignment_id,
+                    'title': quiz.title,
+                    'type': 'Quiz'
+                })
             except CanvasException:
                 app.logger.exception('Error getting/editing quiz #{}.'.format(
                     quiz_id
                 ))
 
+                return error_json(assignment_id, updated_list)
+
         else:
             try:
                 assignment = course.get_assignment(assignment_id)
                 assignment.edit(assignment=payload)
+                updated_list.append({
+                    'id': assignment_id,
+                    'title': assignment.name,
+                    'type': 'Assignment'
+                })
             except CanvasException:
                 app.logger.exception('Error getting/editing assignment #{}.'.format(
                     assignment_id
                 ))
 
-    # temporarily redirecting back for debug purposes
-    return redirect(url_for('show_assignments', course_id=course_id))
+                return error_json(assignment_id, updated_list)
+
+    return json.dumps({
+        'error': False,
+        'message': 'Successfully updated {} assignments.'.format(len(updated_list)),
+        'updated': updated_list,
+    })
 
 
 @app.route('/lti.xml', methods=['GET'])

@@ -8,7 +8,7 @@
 
 <h1>Assignments for {{ course.name }}</h1>
 
-<form class="container" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
+<form id="assignments_form" class="container" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
 	{% for assignment in assignments %}
 	<div class="row {{ loop.cycle('odd', '') }}">
 		{% if assignment.quiz_id is defined %}
@@ -51,6 +51,11 @@
 				title="Toggle whether or not an assignment is published."
 			{% endif %}
 			>
+
+			{% if not assignment.unpublishable %}
+				<!-- Hidden input when checkbox is disabled -->
+				<input name="{{ assignment.id }}-published" type="hidden" value="on">
+			{% endif %}
 		</div>
 		<div class="col-xs-12 col-sm-6 col-md-3 picker-group">
 			<label for="{{ assignment.id }}-unlock_at">Available From:</label>
@@ -99,30 +104,82 @@
 	<input class="btn btn-success" type="submit">
 </form>
 
+<!-- Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button id="close_x" type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="statusModalLabel">Updating Assignments</h4>
+      </div>
+      <div id="status_content" class="modal-body"></div>
+      <div class="modal-footer">
+        <button id="close_button" type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block custom_js %}
 	<script type="text/javascript" src="{{ url_for('static', filename='moment.min.js') }}"></script>
 	<script type="text/javascript" src="{{ url_for('static', filename='bootstrap-datetimepicker.js') }}"></script>
 	<script type="text/javascript">
-		$(function () {
-			$('.picker-due').datetimepicker();
+		// due date datetime picker
+		$('.picker-due').datetimepicker();
 
-			// linked pickers
-			$('.picker-group').each(function() {
-				children = $(this).children('.picker')
-				var start = children[0];
-				var end = children[1];
+		// linked pickers
+		$('.picker-group').each(function() {
+			children = $(this).children('.picker')
+			var start = children[0];
+			var end = children[1];
 
-				$(start).datetimepicker();
-				$(end).datetimepicker({useCurrent: false});
-				$(start).on("dp.change", function(e) {
-					$(end).data("DateTimePicker").minDate(e.date);
-				});
-				$(end).on("dp.change", function(e) {
-					$(start).data("DateTimePicker").maxDate(e.date);
-				});
+			$(start).datetimepicker();
+			$(end).datetimepicker({useCurrent: false});
+			$(start).on("dp.change", function(e) {
+				$(end).data("DateTimePicker").minDate(e.date);
+			});
+			$(end).on("dp.change", function(e) {
+				$(start).data("DateTimePicker").maxDate(e.date);
 			});
 		});
+
+		// initialize status modal
+		$('#statusModal').modal({
+			backdrop: 'static',
+			show: false
+		});
+
+		// AJAX submit updates
+		$('#assignments_form').on('submit', function(e){
+			e.preventDefault();
+
+			$('#statusModal').modal('show');
+			$('#close_button').prop('disabled', true);
+			$('#close_x').hide();
+			$('#statusModal .modal-body').text('Processing... (This may take a few minutes)')
+
+			var post_url = $(this).attr('action');
+			$.post(post_url, $(this).serialize(), function(data_str) {
+
+				var data = JSON.parse(data_str);
+
+				var new_text = "<p>" + data.message + "</p>"
+				if (data.updated.length > 0) {
+					new_text += "<table class='table'><thead><tr><th scope='col'>ID</th><th scope='col'>Title</th><th scope='col'>Type</th></tr></thead><tbody>"
+					for (x in data.updated) {
+						new_text += "<tr><td>" + data.updated[x].id + "</td><td>" + data.updated[x].title + "</td><td>" + data.updated[x].type + "</td></tr>";
+					}
+					new_text += "</tbody></table>"
+				}
+
+				$('#status_content').html(new_text);
+
+				$('#close_button').prop('disabled', false);
+				$('#close_x').show();
+			});
+		});
+
 	</script>
 {% endblock %}
