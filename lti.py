@@ -42,7 +42,7 @@ def error(exception=None):
     )
 
 
-@app.route('/launch', methods=['POST', 'GET'])
+@app.route('/launch', methods=['GET', 'POST'])
 @lti(error=error, request='initial', role='staff', app=app)
 def launch(lti=lti):
     course_id = request.form.get('custom_canvas_course_id')
@@ -64,22 +64,28 @@ def show_assignments(course_id, lti=lti):
         assignments = course.get_assignments()
         quiz_dict = {quiz.id: quiz for quiz in course.get_quizzes()}
     except CanvasException as err:
-        app.logger.exception('Error getting assignments from Canvas.')
+        app.logger.exception(
+            'Error getting course, assignments or quizzes from Canvas.'
+        )
         return error({'exception': err})
 
     assignment_quiz_list = []
-    for assignment in assignments:
-        if hasattr(assignment, 'quiz_id'):
-            quiz = quiz_dict.get(assignment.quiz_id)
-            if hasattr(quiz, 'show_correct_answers_at_date'):
-                assignment.show_correct_answers_at_date = datetime_localize(
-                    quiz.show_correct_answers_at_date
-                )
-            if hasattr(quiz, 'hide_correct_answers_at_date'):
-                assignment.hide_correct_answers_at_date = datetime_localize(
-                    quiz.hide_correct_answers_at_date
-                )
-        assignment_quiz_list.append(assignment)
+    try:
+        for assignment in assignments:
+            if hasattr(assignment, 'quiz_id'):
+                quiz = quiz_dict.get(assignment.quiz_id)
+                if hasattr(quiz, 'show_correct_answers_at_date'):
+                    assignment.show_correct_answers_at_date = datetime_localize(
+                        quiz.show_correct_answers_at_date
+                    )
+                if hasattr(quiz, 'hide_correct_answers_at_date'):
+                    assignment.hide_correct_answers_at_date = datetime_localize(
+                        quiz.hide_correct_answers_at_date
+                    )
+            assignment_quiz_list.append(assignment)
+    except CanvasException as err:
+        app.logger.exception('Error getting assignments from Canvas.')
+        return error({'exception': err})
 
     return render_template(
         'assignments.htm.j2',
@@ -97,26 +103,44 @@ def update_assignments(course_id, lti=lti):
             value = datetime.strptime(value, config.LOCAL_TIME_FORMAT)
             value = local_tz.localize(value)
             return value.isoformat()
-        except ValueError:
+        except (ValueError, TypeError):
             # Not a valid time. Just ignore.
             return ''
 
     def error_json(assignment_id, updated_list):
         msg = 'There was an error editing one of the assignments. (ID: {})'
-        msg.format(assignment_id)
+        msg = msg.format(assignment_id)
         if len(updated_list) > 0:
-            msg += ' {} assignments have been updated successfully.'.format(
+            '{} {} assignments have been updated successfully.'.format(
+                msg,
                 len(updated_list)
             )
 
-        return json.dumps({
-            'error': True,
-            'message': msg,
-            'updated': updated_list,
-        })
+        return Response(
+            json.dumps({
+                'error': True,
+                'message': msg,
+                'updated': updated_list,
+            }),
+            mimetype='application/json'
+        )
 
     if not request.is_xhr:
         return render_template('error.htm.j2', message='Non-AJAX requests not allowed.')
+
+    try:
+        course = canvas.get_course(course_id)
+    except CanvasException:
+        msg = 'Error getting course #{}.'.format(course_id)
+        app.logger.exception(msg)
+        return Response(
+            json.dumps({
+                'error': True,
+                'message': msg,
+                'updated': []
+            }),
+            mimetype='application/json'
+        )
 
     post_data = request.form
 
@@ -130,14 +154,20 @@ def update_assignments(course_id, lti=lti):
         assignment_id, field_name = key.split('-')
         assignment_field_map[assignment_id].update({field_name: value})
 
+    if len(assignment_field_map) < 1:
+        return Response(
+            json.dumps({
+                'error': True,
+                'message': 'There were no assignments to update.',
+                'updated': []
+            }),
+            mimetype='application/json'
+        )
+
     updated_list = []
     for assignment_id, field in assignment_field_map.iteritems():
         assignment_type = field.get('assignment_type', 'assignment')
         quiz_id = field.get('quiz_id')
-        try:
-            course = canvas.get_course(course_id)
-        except CanvasException:
-            app.logger.exception('Error getting course #{}.'.format(course_id))
 
         payload = {
             'published': True if field.get('published') == 'on' else False,
@@ -187,18 +217,21 @@ def update_assignments(course_id, lti=lti):
 
                 return error_json(assignment_id, updated_list)
 
-    return json.dumps({
-        'error': False,
-        'message': 'Successfully updated {} assignments.'.format(len(updated_list)),
-        'updated': updated_list,
-    })
+    return Response(
+        json.dumps({
+            'error': False,
+            'message': 'Successfully updated {} assignments.'.format(len(updated_list)),
+            'updated': updated_list,
+        }),
+        mimetype='application/json'
+    )
 
 
 @app.route('/lti.xml', methods=['GET'])
 def xml():
     return Response(
         render_template('lti.xml.j2'),
-        mimetype='text/xml'
+        mimetype='application/xml'
     )
 
 

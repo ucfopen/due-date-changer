@@ -3,3 +3,5 @@
 env/
 config.py
 *.log
+.coverage
+/htmlcov
