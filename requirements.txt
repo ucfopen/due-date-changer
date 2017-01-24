@@ -1,4 +1,4 @@
 Flask==0.11.1
--e git+https://clu.cdl.ucf.edu/techrangers/pycanvas.git@63220dae60e0bfbdf47ccb36cca6177b4fc2c47d#egg=pycanvas
+-e git+git@github.com:ucfcdl/pycanvas.git@stable#egg=pycanvas
 PyLTI==0.4.1
 pytz==2016.7
