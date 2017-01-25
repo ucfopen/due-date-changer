@@ -107,16 +107,16 @@
 <!-- Modal -->
 <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel">
   <div class="modal-dialog" role="document">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button id="close_x" type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="statusModalLabel">Updating Assignments</h4>
-      </div>
-      <div id="status_content" class="modal-body"></div>
-      <div class="modal-footer">
-        <button id="close_button" type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-      </div>
-    </div>
+	<div class="modal-content">
+	  <div class="modal-header">
+		<button id="close_x" type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+		<h4 class="modal-title" id="statusModalLabel">Updating Assignments</h4>
+	  </div>
+	  <div id="status_content" class="modal-body"></div>
+	  <div class="modal-footer">
+		<button id="close_button" type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+	  </div>
+	</div>
   </div>
 </div>
 
@@ -126,10 +126,10 @@
 	<script type="text/javascript" src="{{ url_for('static', filename='moment.min.js') }}"></script>
 	<script type="text/javascript" src="{{ url_for('static', filename='bootstrap-datetimepicker.js') }}"></script>
 	<script type="text/javascript">
-		// due date datetime picker
+		// Due date datetime picker
 		$('.picker-due').datetimepicker();
 
-		// linked pickers
+		// Linked pickers
 		$('.picker-group').each(function() {
 			children = $(this).children('.picker')
 			var start = children[0];
@@ -145,14 +145,19 @@
 			});
 		});
 
-		// initialize status modal
+		// Initialize status modal
 		$('#statusModal').modal({
 			backdrop: 'static',
 			show: false
 		});
 
+		// Disable enter key submitting form
+		$(document).on("keypress", "form", function(event) {
+			return event.keyCode != 13;
+		});
+
 		// AJAX submit updates
-		$('#assignments_form').on('submit', function(e){
+		$('#assignments_form').on('submit', function(e) {
 			e.preventDefault();
 
 			$('#statusModal').modal('show');
@@ -161,9 +166,10 @@
 			$('#statusModal .modal-body').text('Processing... (This may take a few minutes)')
 
 			var post_url = $(this).attr('action');
-			$.post(post_url, $(this).serialize(), function(data_str) {
 
-				var data = JSON.parse(data_str);
+			// TODO: only update assignments that are altered.
+
+			$.post(post_url, $(this).serialize(), function(data) {
 
 				var new_text = "<p>" + data.message + "</p>"
 				if (data.updated.length > 0) {
