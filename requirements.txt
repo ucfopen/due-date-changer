@@ -1,4 +1,4 @@
 Flask==0.11.1
--e git+git@github.com:ucfcdl/pycanvas.git@stable#egg=pycanvas
+canvasapi
 PyLTI==0.4.1
 pytz==2016.7
