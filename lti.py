@@ -6,8 +6,8 @@ from logging.handlers import RotatingFileHandler
 import re
 
 from flask import Flask, redirect, render_template, request, url_for, Response
-from pycanvas import Canvas
-from pycanvas.exceptions import CanvasException
+from canvasapi import Canvas
+from canvasapi.exceptions import CanvasException
 from pylti.flask import lti
 from pytz import utc, timezone
 
