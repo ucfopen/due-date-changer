@@ -2,6 +2,7 @@
 
 {% block custom_css %}
 	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='bootstrap-datetimepicker.css') }}">
+	<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='bootstrap-toggle.min.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -10,7 +11,7 @@
 
 <form id="assignments_form" class="container" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
 	{% for assignment in assignments %}
-	<div class="row {{ loop.cycle('odd', '') }}">
+	<div class="row {{ loop.cycle('odd', '') }}" data-assignment-id="{{ assignment.id }}">
 		{% if assignment.quiz_id is defined %}
 			<input id="{{ assignment.id }}-assignment_type" name="{{ assignment.id }}-assignment_type" type="hidden" value="quiz">
 			<input id="{{ assignment.id }}-quiz_id" name="{{ assignment.id }}-quiz_id" type="hidden" value="{{ assignment.quiz_id }}">
@@ -26,9 +27,22 @@
 			{% endif %}
 		</div>
 		<div class="col-xs-12 col-sm-6 col-md-3">
+			<label for="{{ assignment.id }}-unlock_at">Available At:</label>
+			<div class='input-group date picker unlock-at'>
+				<input id="{{ assignment.id }}-unlock_at" name="{{ assignment.id }}-unlock_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is unlocked."
+				{% if assignment.unlock_at_date %}
+					value="{{ assignment.unlock_at_date | datetime_localize }}"
+				{% endif %}
+				>
+				<span class="input-group-addon">
+					<span class="glyphicon glyphicon-calendar"></span>
+				</span>
+			</div>
+		</div>
+		<div class="col-xs-12 col-sm-6 col-md-3">
 			<label for="{{ assignment.id }}-due_at">Due At:</label>
 			<div class='input-group date picker picker-due'>
-				<input id="{{ assignment.id }}-due_at" name="{{ assignment.id }}-due_at" type="text" class="form-control" title="Date and Time at which the assignment is due."
+				<input id="{{ assignment.id }}-due_at" name="{{ assignment.id }}-due_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is due."
 				{% if assignment.due_at_date %}
 					value="{{ assignment.due_at_date | datetime_localize }}"
 				{% endif %}
@@ -37,8 +51,10 @@
 					<span class="glyphicon glyphicon-calendar"></span>
 				</span>
 			</div>
+		</div>
+		<div class="col-xs-12 col-sm-6 col-md-1">
 			<label for="{{ assignment.id }}-published">Published:</label><br />
-			<input id="{{ assignment.id }}-published" name="{{ assignment.id }}-published" type="checkbox" class="form-check"
+			<input id="{{ assignment.id }}-published" name="{{ assignment.id }}-published" type="checkbox" class="form-check" data-toggle="toggle" data-on="<span class='glyphicon glyphicon-ok'></span>" data-off="<span class='glyphicon glyphicon-remove'></span>" data-offstyle="danger" data-onstyle="success" data-size="small"
 
 			{% if assignment.published %}
 				checked
@@ -57,48 +73,52 @@
 				<input name="{{ assignment.id }}-published" type="hidden" value="on">
 			{% endif %}
 		</div>
-		<div class="col-xs-12 col-sm-6 col-md-3 picker-group">
-			<label for="{{ assignment.id }}-unlock_at">Available From:</label>
-			<div class='input-group date picker'>
-				<input id="{{ assignment.id }}-unlock_at" name="{{ assignment.id }}-unlock_at" type="text" class="form-control" title="Date and Time at which the assignment is unlocked."
-				{% if assignment.unlock_at_date %}
-					value="{{ assignment.unlock_at_date | datetime_localize }}"
-				{% endif %}
-				>
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
-			<label for="{{ assignment.id }}-lock_at">Available Until:</label>
-			<div class='input-group date picker'>
-				<input id="{{ assignment.id }}-lock_at" name="{{ assignment.id }}-lock_at" type="text" class="form-control" title="Date and Time at which the assignment is locked."
-				{% if assignment.lock_at_date %}
-					value="{{ assignment.lock_at_date | datetime_localize }}"
-				{% endif %}
-				>
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
+		<div class="col-xs-12 col-sm-6 col-md-2">
+			<label>Other Options:</label>
+			<button class="btn btn-primary btn-sm more-button" type="button" data-toggle="collapse" data-target="[data-assignment-id={{ assignment.id }}] .collapse" aria-expanded="false" aria-controls="collapse">More <span class="caret"></span></button>
 		</div>
-		<div class="col-xs-12 col-sm-6 col-md-3 picker-group">
-			{% if assignment.quiz_id is defined %}
-			<label for="{{ assignment.id }}-show_correct_answers_at">Show Answers:</label>
-			<div class='input-group date picker'>
-				<input id="{{ assignment.id }}-show_correct_answers_at" name="{{ assignment.id }}-show_correct_answers_at" type="text" class="form-control" value="{{ assignment.show_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become available for students to view.">
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
+		<span class="clearfix"></span>
+		<div class="collapse">
+			<div class="col-xs-12 col-sm-6 col-md-3 col-md-offset-3">
+				<label for="{{ assignment.id }}-lock_at">Available Until:</label>
+				<div class='input-group date picker lock-at'>
+					<input id="{{ assignment.id }}-lock_at" name="{{ assignment.id }}-lock_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is locked."
+					{% if assignment.lock_at_date %}
+							value="{{ assignment.lock_at_date | datetime_localize }}"
+					{% endif %}
+					>
+					<span class="input-group-addon">
+							<span class="glyphicon glyphicon-calendar"></span>
+					</span>
+				</div>
 			</div>
-			<label for="{{ assignment.id }}-hide_correct_answers_at">Hide Answers:</label>
-			<div class='input-group date picker'>
-				<input id="{{ assignment.id }}-hide_correct_answers_at" name="{{ assignment.id }}-hide_correct_answers_at" type="text" class="form-control" value="{{ assignment.hide_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become hidden from students.">
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
+
+			{% if assignment.quiz_id is defined %}
+			<div class="col-xs-12 col-sm-6 col-md-3">
+				<label for="{{ assignment.id }}-show_correct_answers_at">Show Answers:</label>
+				<div class='input-group date picker show-at'>
+						<input id="{{ assignment.id }}-show_correct_answers_at" name="{{ assignment.id }}-show_correct_answers_at" type="text" class="form-control input-sm" value="{{ assignment.show_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become available for students to view.">
+						<span class="input-group-addon">
+								<span class="glyphicon glyphicon-calendar"></span>
+						</span>
+				</div>
+			</div>
+
+			<div class="col-xs-12 col-sm-6 col-md-3">
+				<label for="{{ assignment.id }}-hide_correct_answers_at">Hide Answers:</label>
+				<div class='input-group date picker hide-at'>
+						<input id="{{ assignment.id }}-hide_correct_answers_at" name="{{ assignment.id }}-hide_correct_answers_at" type="text" class="form-control input-sm" value="{{ assignment.hide_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become hidden from students.">
+						<span class="input-group-addon">
+								<span class="glyphicon glyphicon-calendar"></span>
+						</span>
+				</div>
 			</div>
 			{% endif %}
 		</div>
+	</div>
+	{% else %}
+	<div class="row odd">
+	<p class="text-center">No Assignments Found</p>
 	</div>
 	{% endfor %}
 	<input class="btn btn-success" type="submit">
@@ -125,16 +145,52 @@
 {% block custom_js %}
 	<script type="text/javascript" src="{{ url_for('static', filename='moment.min.js') }}"></script>
 	<script type="text/javascript" src="{{ url_for('static', filename='bootstrap-datetimepicker.js') }}"></script>
+	<script type="text/javascript" src="{{ url_for('static', filename='bootstrap-toggle.min.js') }}"></script>
 	<script type="text/javascript">
 		// Due date datetime picker
 		$('.picker-due').datetimepicker({useCurrent: false});
 
-		// Linked pickers
-		$('.picker-group').each(function() {
-			children = $(this).children('.picker')
-			var start = children[0];
-			var end = children[1];
+		// // Linked pickers
+		// $('.picker-group').each(function() {
+		// 	children = $(this).children('.picker')
+		// 	var start = children[0];
+		// 	var end = children[1];
 
+			// $(start).datetimepicker({useCurrent: false});
+			// $(end).datetimepicker({useCurrent: false});
+			// $(start).on("dp.change", function(e) {
+			// 	$(end).data("DateTimePicker").minDate(e.date);
+			// });
+			// $(end).on("dp.change", function(e) {
+			// 	$(start).data("DateTimePicker").maxDate(e.date);
+			// });
+		// });
+
+		// toggle more button
+		$('.collapse').on('shown.bs.collapse', function() {
+			var more_button = $(this).closest('.row').find('.more-button');
+			$(more_button).html('More <span class="dropup"><span class="caret"></span></span>')
+		});
+		$('.collapse').on('hidden.bs.collapse', function() {
+			var more_button = $(this).closest('.row').find('.more-button');
+			$(more_button).html('More <span class="caret"></span>')
+		});
+
+
+		// Link pickers
+		$('.row').each(function() {
+			// link available at - available until
+			var unlock_at = $(this).find('.picker.unlock-at');
+			var lock_at = $(this).find('.picker.lock-at')
+			link_pickers(unlock_at, lock_at)
+
+			// link show answers - hide answers
+			var show_at = $(this).find('.picker.show-at');
+			var hide_at = $(this).find('.picker.hide-at')
+			link_pickers(show_at, hide_at)
+		});
+
+		function link_pickers(start, end) {
 			$(start).datetimepicker({useCurrent: false});
 			$(end).datetimepicker({useCurrent: false});
 			$(start).on("dp.change", function(e) {
@@ -143,7 +199,7 @@
 			$(end).on("dp.change", function(e) {
 				$(start).data("DateTimePicker").maxDate(e.date);
 			});
-		});
+		}
 
 		// Initialize status modal
 		$('#statusModal').modal({
