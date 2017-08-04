@@ -18,7 +18,7 @@
 			<input id="{{ assignment.id }}-assignment_type" name="{{ assignment.id }}-assignment_type" type="hidden" value="assignment">
 		{% endif %}
 		<div class="col-xs-12 col-sm-6 col-md-3">
-			<p><strong>{{ assignment.name }} ({{ assignment.id }})</strong></p>
+			<p><strong><a href="{{ config.CANVAS_URL }}/courses/{{ course.id }}/assignments/{{ assignment.id }}" target="_blank">{{ assignment.name }}</a></strong></p>
 			{% if assignment.quiz_id is defined %}
 				<p>Quiz</p>
 			{% else %}
