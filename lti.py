@@ -45,6 +45,17 @@ def error(exception=None):
 @app.route('/launch', methods=['GET', 'POST'])
 @lti(error=error, request='initial', role='staff', app=app)
 def launch(lti=lti):
+    canvas_domain = request.values.get('custom_canvas_api_domain')
+    if canvas_domain not in config.ALLOWED_CANVAS_DOMAINS:
+        msg = (
+            '<p>This tool is only available from the following domain(s):<br/>{}</p>'
+            '<p>You attempted to access from this domain:<br/>{}</p>'
+        )
+        return render_template(
+            'error.htm.j2',
+            message=msg.format(', '.join(config.ALLOWED_CANVAS_DOMAINS), canvas_domain),
+        )
+
     course_id = request.form.get('custom_canvas_course_id')
 
     return redirect(url_for('show_assignments', course_id=course_id))

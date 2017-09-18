@@ -1,6 +1,8 @@
 DEBUG = False
 SECRET_KEY = ''
 
+ALLOWED_CANVAS_DOMAINS = []  # A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
+
 API_URL = 'https://webcourses2c.test.instructure.com/api/v1/'
 API_KEY = ''
 
