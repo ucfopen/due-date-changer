@@ -245,3 +245,13 @@ def datetime_localize(utc_datetime, format=config.LOCAL_TIME_FORMAT):
     local_datetime = utc_datetime.astimezone(new_tz)
 
     return local_datetime.strftime(format)
+
+
+@app.template_test('quiz')
+def is_quiz(assignment):
+    return 'online_quiz'in assignment.submission_types
+
+
+@app.template_test('discussion')
+def is_discussion(assignment):
+    return 'discussion_topic' in assignment.submission_types

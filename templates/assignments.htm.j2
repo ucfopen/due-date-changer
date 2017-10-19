@@ -7,12 +7,19 @@
 
 {% block content %}
 
-<h1>Assignments for {{ course.name }}</h1>
+<h1>Due Date Changer</h1>
 
-<form id="assignments_form" class="container" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
+<div id="top_buttons" class="text-right">
+	<button type="button" id="expand_all_btn" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-plus"></span> Expand All</button>
+	<button type="button" id="collapse_all_btn" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-minus"></span> Collapse All</button>
+</div>
+
+<form id="assignments_form" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
+	<div id="test_box" class="container">
+
 	{% for assignment in assignments %}
 	<div class="row {{ loop.cycle('odd', '') }}" data-assignment-id="{{ assignment.id }}">
-		{% if assignment.quiz_id is defined %}
+		{% if assignment is quiz %}
 			<input id="{{ assignment.id }}-assignment_type" name="{{ assignment.id }}-assignment_type" type="hidden" value="quiz">
 			<input id="{{ assignment.id }}-quiz_id" name="{{ assignment.id }}-quiz_id" type="hidden" value="{{ assignment.quiz_id }}">
 		{% else %}
@@ -20,8 +27,10 @@
 		{% endif %}
 		<div class="col-xs-12 col-sm-6 col-md-3">
 			<p><strong><a href="{{ config.CANVAS_URL }}/courses/{{ course.id }}/assignments/{{ assignment.id }}" target="_blank">{{ assignment.name }} ({{ assignment.id }})</a></strong></p>
-			{% if assignment.quiz_id is defined %}
+			{% if assignment is quiz %}
 				<p>Quiz</p>
+			{% elif assignment is discussion %}
+				<p>Discussion</p>
 			{% else %}
 				<p>Assignment</p>
 			{% endif %}
@@ -93,7 +102,7 @@
 				</div>
 			</div>
 
-			{% if assignment.quiz_id is defined %}
+			{% if assignment is quiz %}
 			<div class="col-xs-12 col-sm-6 col-md-3">
 				<label for="{{ assignment.id }}-show_correct_answers_at">Show Answers:</label>
 				<div class='input-group date picker show-at'>
@@ -114,14 +123,15 @@
 				</div>
 			</div>
 			{% endif %}
-		</div>
+		</div><!-- /collapse -->
 	</div>
 	{% else %}
 	<div class="row odd">
 	<p class="text-center">No Assignments Found</p>
 	</div>
 	{% endfor %}
-	<input class="btn btn-success" type="submit">
+	</div><!-- /test_box -->
+	<input class="btn btn-success" type="submit" value="Submit">
 </form>
 
 <!-- Modal -->
@@ -166,7 +176,15 @@
 			// });
 		// });
 
-		// toggle more button
+		// toggle all "more" buttons
+		$('#collapse_all_btn').on('click', function() {
+			$('.collapse').collapse('hide');
+		});
+		$('#expand_all_btn').on('click', function() {
+			$('.collapse').collapse('show');
+		});
+
+		// toggle "more" button
 		$('.collapse').on('shown.bs.collapse', function() {
 			var more_button = $(this).closest('.row').find('.more-button');
 			$(more_button).html('More <span class="dropup"><span class="caret"></span></span>')

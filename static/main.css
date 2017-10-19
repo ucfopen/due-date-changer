@@ -1,3 +1,7 @@
+body, html {
+	max-height: 100vh;
+}
+
 h1 {
 	text-align: center;
 }
@@ -8,11 +12,27 @@ footer {
 	text-align: center;
 }
 
-.row {
-	border-top: 1px solid #ddd;
+.row{
 	padding: 8px;
+}
+
+.row:not(:first-child) {
+	border-top: 1px solid #ddd;
 }
 
 .odd {
 	background-color: #f9f9f9;
+}
+
+#test_box {
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	max-height: 65vh;
+	width: 100%;
+	overflow: scroll;
+	margin-bottom: 10px;
+}
+
+#top_buttons {
+	margin-bottom: 10px;
 }

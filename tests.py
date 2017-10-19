@@ -694,9 +694,9 @@ class LTITests(flask_testing.TestCase):
 
     @staticmethod
     def generate_launch_request(
-                url, body=None, http_method="GET", base_url='http://localhost',
-                roles='Instructor', headers=None
-            ):
+            url, body=None, http_method="GET", base_url='http://localhost',
+            roles='Instructor', headers=None):
+
         params = {}
 
         if roles is not None:
