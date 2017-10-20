@@ -10,8 +10,8 @@ API_KEY = ''
 
 PYLTI_CONFIG = {
     'consumers': {
-        "key": {
-            "secret": "secret"
+        'key': {
+            'secret': b'secret'  # secret must be bytes (b'')
         }
     }
 }
