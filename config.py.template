@@ -13,6 +13,14 @@ PYLTI_CONFIG = {
         'key': {
             'secret': b'secret'  # secret must be bytes (b'')
         }
+    },
+    'roles': {
+        'staff': [
+            'urn:lti:instrole:ims/lis/Administrator',
+            'Instructor',
+            'ContentDeveloper',
+            'urn:lti:role:ims/lis/TeachingAssistant'
+        ]
     }
 }
 
