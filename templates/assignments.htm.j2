@@ -36,19 +36,6 @@
 			{% endif %}
 		</div>
 		<div class="col-xs-12 col-sm-6 col-md-3">
-			<label for="{{ assignment.id }}-unlock_at">Available At:</label>
-			<div class='input-group date picker unlock-at'>
-				<input id="{{ assignment.id }}-unlock_at" name="{{ assignment.id }}-unlock_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is unlocked."
-				{% if assignment.unlock_at_date %}
-					value="{{ assignment.unlock_at_date | datetime_localize }}"
-				{% endif %}
-				>
-				<span class="input-group-addon">
-					<span class="glyphicon glyphicon-calendar"></span>
-				</span>
-			</div>
-		</div>
-		<div class="col-xs-12 col-sm-6 col-md-3">
 			<label for="{{ assignment.id }}-due_at">Due At:</label>
 			<div class='input-group date picker picker-due'>
 				<input id="{{ assignment.id }}-due_at" name="{{ assignment.id }}-due_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is due."
@@ -64,7 +51,6 @@
 		<div class="col-xs-12 col-sm-6 col-md-1">
 			<label for="{{ assignment.id }}-published">Published:</label><br />
 			<input id="{{ assignment.id }}-published" name="{{ assignment.id }}-published" type="checkbox" class="form-check" data-toggle="toggle" data-on="<span class='glyphicon glyphicon-ok'></span>" data-off="<span class='glyphicon glyphicon-remove'></span>" data-offstyle="danger" data-onstyle="success" data-size="small"
-
 			{% if assignment.published %}
 				checked
 			{% endif %}
@@ -82,13 +68,26 @@
 				<input name="{{ assignment.id }}-published" type="hidden" value="on">
 			{% endif %}
 		</div>
-		<div class="col-xs-12 col-sm-6 col-md-2">
+		<div class="col-xs-12 col-sm-6 col-md-2 col-md-offset-3">
 			<label>Other Options:</label>
 			<button class="btn btn-primary btn-sm more-button" type="button" data-toggle="collapse" data-target="[data-assignment-id={{ assignment.id }}] .collapse" aria-expanded="false" aria-controls="collapse">More <span class="caret"></span></button>
 		</div>
 		<span class="clearfix"></span>
 		<div class="collapse">
-			<div class="col-xs-12 col-sm-6 col-md-3 col-md-offset-3">
+			<div class="col-xs-12 col-sm-6 col-md-3">
+				<label for="{{ assignment.id }}-unlock_at">Available At:</label>
+				<div class='input-group date picker unlock-at'>
+					<input id="{{ assignment.id }}-unlock_at" name="{{ assignment.id }}-unlock_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is unlocked."
+					{% if assignment.unlock_at_date %}
+						value="{{ assignment.unlock_at_date | datetime_localize }}"
+					{% endif %}
+					>
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
+				</div>
+			</div>
+			<div class="col-xs-12 col-sm-6 col-md-3">
 				<label for="{{ assignment.id }}-lock_at">Available Until:</label>
 				<div class='input-group date picker lock-at'>
 					<input id="{{ assignment.id }}-lock_at" name="{{ assignment.id }}-lock_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is locked."
@@ -97,7 +96,7 @@
 					{% endif %}
 					>
 					<span class="input-group-addon">
-							<span class="glyphicon glyphicon-calendar"></span>
+						<span class="glyphicon glyphicon-calendar"></span>
 					</span>
 				</div>
 			</div>
@@ -106,20 +105,20 @@
 			<div class="col-xs-12 col-sm-6 col-md-3">
 				<label for="{{ assignment.id }}-show_correct_answers_at">Show Answers:</label>
 				<div class='input-group date picker show-at'>
-						<input id="{{ assignment.id }}-show_correct_answers_at" name="{{ assignment.id }}-show_correct_answers_at" type="text" class="form-control input-sm" value="{{ assignment.show_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become available for students to view.">
-						<span class="input-group-addon">
-								<span class="glyphicon glyphicon-calendar"></span>
-						</span>
+					<input id="{{ assignment.id }}-show_correct_answers_at" name="{{ assignment.id }}-show_correct_answers_at" type="text" class="form-control input-sm" value="{{ assignment.show_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become available for students to view.">
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
 				</div>
 			</div>
 
 			<div class="col-xs-12 col-sm-6 col-md-3">
 				<label for="{{ assignment.id }}-hide_correct_answers_at">Hide Answers:</label>
 				<div class='input-group date picker hide-at'>
-						<input id="{{ assignment.id }}-hide_correct_answers_at" name="{{ assignment.id }}-hide_correct_answers_at" type="text" class="form-control input-sm" value="{{ assignment.hide_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become hidden from students.">
-						<span class="input-group-addon">
-								<span class="glyphicon glyphicon-calendar"></span>
-						</span>
+					<input id="{{ assignment.id }}-hide_correct_answers_at" name="{{ assignment.id }}-hide_correct_answers_at" type="text" class="form-control input-sm" value="{{ assignment.hide_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become hidden from students.">
+					<span class="input-group-addon">
+						<span class="glyphicon glyphicon-calendar"></span>
+					</span>
 				</div>
 			</div>
 			{% endif %}
@@ -136,18 +135,26 @@
 
 <!-- Modal -->
 <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel">
-  <div class="modal-dialog" role="document">
-	<div class="modal-content">
-	  <div class="modal-header">
-		<button id="close_x" type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-		<h4 class="modal-title" id="statusModalLabel">Updating Assignments</h4>
-	  </div>
-	  <div id="status_content" class="modal-body"></div>
-	  <div class="modal-footer">
-		<button id="close_button" type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
-	  </div>
+	<div class="modal-dialog" role="document">
+		<div class="modal-content">
+			<div class="modal-header">
+			<button id="close_x" type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+			<h4 class="modal-title" id="statusModalLabel">Updating Assignments</h4>
+			</div>
+			<div id="status_content" class="modal-body text-center">
+				<p class="status-perc">0%</p>
+				<div class="progress">
+					<div class="progress-bar progress-bar-info progress-bar-striped" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+						<span class="sr-only">0% Complete</span>
+					</div>
+				</div>
+				<p class="status-msg">Not Started</p>
+			</div>
+			<div class="modal-footer">
+				<button id="close_button" type="button" class="btn btn-danger" data-dismiss="modal"><span class="glyphicon glyphicon-remove"></span> Close</button>
+			</div>
+		</div>
 	</div>
-  </div>
 </div>
 
 {% endblock %}
@@ -157,24 +164,10 @@
 	<script type="text/javascript" src="{{ url_for('static', filename='bootstrap-datetimepicker.js') }}"></script>
 	<script type="text/javascript" src="{{ url_for('static', filename='bootstrap-toggle.min.js') }}"></script>
 	<script type="text/javascript">
+		var update_interval_id = null;
+
 		// Due date datetime picker
 		$('.picker-due').datetimepicker({useCurrent: false});
-
-		// // Linked pickers
-		// $('.picker-group').each(function() {
-		// 	children = $(this).children('.picker')
-		// 	var start = children[0];
-		// 	var end = children[1];
-
-			// $(start).datetimepicker({useCurrent: false});
-			// $(end).datetimepicker({useCurrent: false});
-			// $(start).on("dp.change", function(e) {
-			// 	$(end).data("DateTimePicker").minDate(e.date);
-			// });
-			// $(end).on("dp.change", function(e) {
-			// 	$(start).data("DateTimePicker").maxDate(e.date);
-			// });
-		// });
 
 		// toggle all "more" buttons
 		$('#collapse_all_btn').on('click', function() {
@@ -243,28 +236,71 @@
 			$('#statusModal').modal('show');
 			$('#close_button').prop('disabled', true);
 			$('#close_x').hide();
-			$('#statusModal .modal-body').text('Processing... (This may take a few minutes)')
-
-			var post_url = $(this).attr('action');
 
 			// TODO: only update assignments that are altered.
 
-			$.post(post_url, $(this).serialize(), function(data) {
+			var post_url = $(this).attr('action');
 
-				var new_text = "<p>" + data.message + "</p>"
-				if (data.updated.length > 0) {
-					new_text += "<table class='table'><thead><tr><th scope='col'>ID</th><th scope='col'>Title</th><th scope='col'>Type</th></tr></thead><tbody>"
-					for (x in data.updated) {
-						new_text += "<tr><td>" + data.updated[x].id + "</td><td>" + data.updated[x].title + "</td><td>" + data.updated[x].type + "</td></tr>";
-					}
-					new_text += "</tbody></table>"
+			$.ajax({
+				type: "POST",
+				url: post_url,
+				data: $(this).serialize()
+			})	
+			.done(function(data) {
+				update_interval_id = setInterval(checkUpdate, 1000, data.update_assignments_job_url);
+			});
+
+		})
+
+		function checkUpdate(job_url) {
+			$.ajax({
+				type: "GET",
+				url: job_url
+			})
+			.done(function(data) {
+
+				// If there is no data yet, skip
+				if ($.isEmptyObject(data)) {
+					return;
 				}
 
-				$('#status_content').html(new_text);
+				var percent = data["percent"];
+				var update_div = $('#status_content')
+				var prog_bar = update_div.find('.progress-bar');
 
-				$('#close_button').prop('disabled', false);
-				$('#close_x').show();
+				update_div.find(".status-perc").html(percent.toString() + "%");
+				prog_bar.attr('aria-valuenow', percent);
+				prog_bar.attr('style', 'width: ' + percent.toString() + "%;");
+				prog_bar.find("span").text(percent.toString() + "% Complete");
+				update_div.find('.status-msg').html(data['status_msg']);
+
+				if (data["status"] == "failed") {
+					prog_bar.addClass("progress-bar-danger");
+					prog_bar.removeClass("progress-bar-info");
+					clearInterval(update_interval_id);
+					update_div.find(".status-msg").attr("style", "color: #f00;");
+				}
+				else if (data["status"] == "complete") {
+					prog_bar.addClass("progress-bar-success");
+					prog_bar.removeClass("progress-bar-info");
+					clearInterval(update_interval_id);
+					update_div.find(".status-msg").attr("style", "color: #000;");
+
+					$('#close_button').prop('disabled', false);
+				}
+
+			})
+			.fail(function(data) {
+				var prog_bar = update_div.find('.progress-bar');
+
+				prog_bar.addClass("progress-bar-danger");
+				prog_bar.removeClass("progress-bar-info");
+
+				clearInterval(update_interval_id);
+
+				refresh_div.find(".status-msg").html("<span style=\"color: #f00;\">Failed</span>");
 			});
-		});
+		}
+
 	</script>
 {% endblock %}

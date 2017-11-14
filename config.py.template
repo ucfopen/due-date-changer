@@ -24,6 +24,9 @@ PYLTI_CONFIG = {
     }
 }
 
+REDIS_URL = ''  # URL for the redis server (e.g. 'redis://localhost:6379')
+RQ_WORKER = 'ddc'  # Name of RQ worker to use
+
 TIME_ZONE = 'US/Eastern'
 LOCAL_TIME_FORMAT = '%m/%d/%Y %I:%M %p'
 
