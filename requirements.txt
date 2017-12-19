@@ -1,4 +1,4 @@
 Flask==0.11.1
-canvasapi
+canvasapi==0.7.0
 PyLTI==0.4.1
 pytz==2016.7

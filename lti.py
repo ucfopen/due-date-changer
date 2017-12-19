@@ -181,7 +181,7 @@ def update_assignments(course_id, lti=lti):
         quiz_id = field.get('quiz_id')
 
         payload = {
-            'published': True if field.get('published') == 'on' else False,
+            'published': field.get('published') == 'on',
             'due_at': fix_date(field.get('due_at')),
             'lock_at': fix_date(field.get('lock_at')),
             'unlock_at': fix_date(field.get('unlock_at')),
