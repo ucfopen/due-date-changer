@@ -5,8 +5,11 @@ import logging
 from logging.handlers import RotatingFileHandler
 import re
 
+import requests
+
 from flask import Flask, redirect, render_template, request, url_for, Response
 from canvasapi import Canvas
+from canvasapi.user import User
 from canvasapi.exceptions import CanvasException
 from pylti.flask import lti
 from pytz import utc, timezone
@@ -62,9 +65,55 @@ def launch(lti=lti):
 
 
 @app.route('/', methods=['GET'])
-@lti(error=error, request='any', role='any', app=app)
 def index(lti=lti):
     return "Please contact your System Administrator."
+
+
+@app.route('/status', methods=['GET'])
+def status():
+    """
+    Runs smoke tests and reports status
+    """
+    status = {
+        'tool': 'Due Date Changer',
+        'checks': {
+            'index': False,
+            'xml': False,
+            'api_key': False,
+        },
+        'url': url_for('index', _external=True),
+        'api_url': config.API_URL,
+        'debug': app.debug
+    }
+
+    # Check index
+    try:
+        response = requests.get(url_for('index', _external=True), verify=False)
+        status['checks']['index'] = response.text == 'Please contact your System Administrator.'
+    except Exception as e:
+        app.logger.exception('Index check failed.')
+
+    # Check xml
+    try:
+        response = requests.get(url_for('xml', _external=True), verify=False)
+        status['checks']['xml'] = 'application/xml' in response.headers.get('Content-Type')
+    except Exception as e:
+        app.logger.exception('XML check failed.')
+
+    # Check API Key
+    try:
+        self_user = canvas.get_user('self')
+        status['checks']['api_key'] = isinstance(self_user, User)
+    except Exception as e:
+        app.logger.exception('API check failed.')
+
+    # Overall health check - if all checks are True
+    status['healthy'] = all(v is True for k, v in status['checks'].items())
+
+    return Response(
+        json.dumps(status),
+        mimetype='application/json'
+    )
 
 
 @app.route('/course/<course_id>/assignments', methods=['GET'])
