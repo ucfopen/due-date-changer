@@ -9,6 +9,7 @@ import requests
 
 from flask import Flask, redirect, render_template, request, url_for, Response
 from canvasapi import Canvas
+from canvasapi.user import User
 from canvasapi.exceptions import CanvasException
 from pylti.flask import lti
 from pytz import utc, timezone
@@ -78,8 +79,10 @@ def status():
         'checks': {
             'index': False,
             'xml': False,
+            'api_key': False,
         },
         'url': url_for('index', _external=True),
+        'api_url': config.API_URL,
         'debug': app.debug
     }
 
@@ -96,6 +99,13 @@ def status():
         status['checks']['xml'] = 'application/xml' in response.headers.get('Content-Type')
     except Exception as e:
         app.logger.exception('XML check failed.')
+
+    # Check API Key
+    try:
+        self_user = canvas.get_user('self')
+        status['checks']['api_key'] = isinstance(self_user, User)
+    except Exception as e:
+        app.logger.exception('API check failed.')
 
     # Overall health check - if all checks are True
     status['healthy'] = all(v is True for k, v in status['checks'].items())
