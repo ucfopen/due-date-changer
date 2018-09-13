@@ -1,16 +1,28 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
+
 DEBUG = False
 SECRET_KEY = ''
 
 ALLOWED_CANVAS_DOMAINS = []  # A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
 
-API_URL = 'https://webcourses2c.test.instructure.com/api/v1/'
+CANVAS_URL = ''  # ex. `https://example.instructure.com`
 API_KEY = ''
 
 PYLTI_CONFIG = {
     'consumers': {
-        "key": {
-            "secret": "secret"
+        'key': {
+            'secret': b'secret'  # secret must be bytes (b'')
         }
+    },
+    'roles': {
+        'staff': [
+            'urn:lti:instrole:ims/lis/Administrator',
+            'Instructor',
+            'ContentDeveloper',
+            'urn:lti:role:ims/lis/TeachingAssistant'
+        ]
     }
 }
 

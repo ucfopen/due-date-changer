@@ -30,7 +30,7 @@ handler.setLevel(logging.getLevelName(config.LOG_LEVEL))
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-canvas = Canvas(config.API_URL, config.API_KEY)
+canvas = Canvas(config.CANVAS_URL, config.API_KEY)
 
 
 def error(exception=None):
@@ -82,7 +82,7 @@ def status():
             'api_key': False,
         },
         'url': url_for('index', _external=True),
-        'api_url': config.API_URL,
+        'canvas_url': config.CANVAS_URL,
         'debug': app.debug
     }
 
