@@ -5,7 +5,9 @@ from __future__ import unicode_literals
 DEBUG = False
 SECRET_KEY = ''
 
-API_URL = 'https://webcourses2c.test.instructure.com/api/v1/'
+ALLOWED_CANVAS_DOMAINS = []  # A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
+
+CANVAS_URL = ''  # ex. `https://example.instructure.com`
 API_KEY = ''
 
 PYLTI_CONFIG = {

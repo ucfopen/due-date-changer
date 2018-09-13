@@ -7,8 +7,11 @@ import logging
 from logging.handlers import RotatingFileHandler
 import re
 
+import requests
+
 from flask import Flask, redirect, render_template, request, url_for, Response
 from canvasapi import Canvas
+from canvasapi.user import User
 from canvasapi.exceptions import CanvasException
 from pylti.flask import lti
 from pytz import utc, timezone
@@ -36,7 +39,7 @@ handler.setLevel(logging.getLevelName(config.LOG_LEVEL))
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-canvas = Canvas(config.API_URL, config.API_KEY)
+canvas = Canvas(config.CANVAS_URL, config.API_KEY)
 
 
 def error(exception=None):
@@ -54,15 +57,72 @@ def error(exception=None):
 @app.route('/launch', methods=['GET', 'POST'])
 @lti(error=error, request='initial', role='staff', app=app)
 def launch(lti=lti):
+    canvas_domain = request.values.get('custom_canvas_api_domain')
+    if canvas_domain not in config.ALLOWED_CANVAS_DOMAINS:
+        msg = (
+            '<p>This tool is only available from the following domain(s):<br/>{}</p>'
+            '<p>You attempted to access from this domain:<br/>{}</p>'
+        )
+        return render_template(
+            'error.htm.j2',
+            message=msg.format(', '.join(config.ALLOWED_CANVAS_DOMAINS), canvas_domain),
+        )
+
     course_id = request.form.get('custom_canvas_course_id')
 
     return redirect(url_for('show_assignments', course_id=course_id))
 
 
 @app.route('/', methods=['GET'])
-@lti(error=error, request='any', role='any', app=app)
 def index(lti=lti):
     return "Please contact your System Administrator."
+
+
+@app.route('/status', methods=['GET'])
+def status():
+    """
+    Runs smoke tests and reports status
+    """
+    status = {
+        'tool': 'Due Date Changer',
+        'checks': {
+            'index': False,
+            'xml': False,
+            'api_key': False,
+        },
+        'url': url_for('index', _external=True),
+        'canvas_url': config.CANVAS_URL,
+        'debug': app.debug
+    }
+
+    # Check index
+    try:
+        response = requests.get(url_for('index', _external=True), verify=False)
+        status['checks']['index'] = response.text == 'Please contact your System Administrator.'
+    except Exception as e:
+        app.logger.exception('Index check failed.')
+
+    # Check xml
+    try:
+        response = requests.get(url_for('xml', _external=True), verify=False)
+        status['checks']['xml'] = 'application/xml' in response.headers.get('Content-Type')
+    except Exception as e:
+        app.logger.exception('XML check failed.')
+
+    # Check API Key
+    try:
+        self_user = canvas.get_user('self')
+        status['checks']['api_key'] = isinstance(self_user, User)
+    except Exception as e:
+        app.logger.exception('API check failed.')
+
+    # Overall health check - if all checks are True
+    status['healthy'] = all(v is True for k, v in status['checks'].items())
+
+    return Response(
+        json.dumps(status),
+        mimetype='application/json'
+    )
 
 
 @app.route('/course/<course_id>/assignments', methods=['GET'])
@@ -180,7 +240,7 @@ def update_assignments_background(course_id, post_data):
         quiz_id = field.get('quiz_id')
 
         payload = {
-            'published': True if field.get('published') == 'on' else False,
+            'published': field.get('published') == 'on',
             'due_at': fix_date(field.get('due_at')),
             'lock_at': fix_date(field.get('lock_at')),
             'unlock_at': fix_date(field.get('unlock_at')),
