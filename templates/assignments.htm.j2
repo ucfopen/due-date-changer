@@ -27,7 +27,7 @@
 		{% endif %}
 		<div class="col-xs-12 col-sm-6 col-md-3">
 			<p><strong><a href="{{ config.CANVAS_URL }}/courses/{{ course.id }}/assignments/{{ assignment.id }}" target="_blank">{{ assignment.name }} ({{ assignment.id }})</a></strong></p>
-			{% if assignment.quiz_id is defined %}
+			{% if assignment is quiz %}
 				<p>Quiz</p>
 			{% elif assignment is discussion %}
 				<p>Discussion</p>
