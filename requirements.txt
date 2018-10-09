@@ -1,5 +1,8 @@
 Flask==1.0.2
 canvasapi==0.10.0
--e git+https://github.com/ucfcdl/pylti.git@roles#egg=PyLTI
-pytz==2018.5
 oauthlib==2.1.0
+pytz==2018.5
+redis==2.10.6
+rq==0.12.0
+
+-e git+https://github.com/ucfcdl/pylti.git@roles#egg=PyLTI

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
+from __future__ import unicode_literals, division
 from collections import defaultdict
-from datetime import datetime
 import json
 import logging
 from logging.handlers import RotatingFileHandler
 import re
+from subprocess import call
 
 import requests
 
@@ -16,9 +16,17 @@ from canvasapi.user import User
 from canvasapi.exceptions import CanvasException
 from pylti.flask import lti
 from pytz import utc, timezone
+import redis
+from redis.exceptions import ConnectionError
+from rq import get_current_job, Queue
+from rq.job import Job
+from rq.exceptions import NoSuchJobError
 
+from utils import fix_date, update_job
 import config
 
+conn = redis.from_url(config.REDIS_URL)
+q = Queue(config.RQ_WORKER, connection=conn)
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -86,29 +94,43 @@ def status():
         },
         'url': url_for('index', _external=True),
         'canvas_url': config.CANVAS_URL,
-        'debug': app.debug
+        'debug': app.debug,
+        'xml_url': url_for('xml', _external=True),
     }
 
     # Check index
     try:
         response = requests.get(url_for('index', _external=True), verify=False)
         status['checks']['index'] = response.text == 'Please contact your System Administrator.'
-    except Exception as e:
+    except Exception:
         app.logger.exception('Index check failed.')
 
     # Check xml
     try:
         response = requests.get(url_for('xml', _external=True), verify=False)
         status['checks']['xml'] = 'application/xml' in response.headers.get('Content-Type')
-    except Exception as e:
+    except Exception:
         app.logger.exception('XML check failed.')
 
     # Check API Key
     try:
         self_user = canvas.get_user('self')
         status['checks']['api_key'] = isinstance(self_user, User)
-    except Exception as e:
+    except Exception:
         app.logger.exception('API check failed.')
+
+    # Check redis
+    try:
+        response = conn.echo('test')
+        status['checks']['redis'] = response == 'test'
+    except ConnectionError:
+        app.logger.exception('Redis connection failed.')
+
+    # Check RQ Worker
+    status['checks']['worker'] = call(
+        'ps aux | grep "rq worker" | grep "ddc" | grep -v grep',
+        shell=True
+    ) == 0
 
     # Overall health check - if all checks are True
     status['healthy'] = all(v is True for k, v in status['checks'].items())
@@ -157,57 +179,62 @@ def show_assignments(course_id, lti=lti):
     )
 
 
-@app.route('/course/<course_id>/update', methods=['POST'])
-@lti(error=error, request='session', role='staff', app=app)
-def update_assignments(course_id, lti=lti):
-
-    def fix_date(value):
-        try:
-            value = datetime.strptime(value, config.LOCAL_TIME_FORMAT)
-            value = local_tz.localize(value)
-            return value.isoformat()
-        except (ValueError, TypeError):
-            # Not a valid time. Just ignore.
-            return ''
-
-    def error_json(assignment_id, updated_list):
-        msg = 'There was an error editing one of the assignments. (ID: {})'
-        msg = msg.format(assignment_id)
-        if len(updated_list) > 0:
-            '{} {} assignments have been updated successfully.'.format(
-                msg,
-                len(updated_list)
-            )
-
+@app.route('/jobs/<job_key>/', methods=['GET'])
+def job_status(job_key):
+    try:
+        job = Job.fetch(job_key, connection=conn)
+    except NoSuchJobError:
         return Response(
             json.dumps({
                 'error': True,
-                'message': msg,
-                'updated': updated_list,
+                'status_msg': '{} is not a valid job key.'.format(job_key)
             }),
-            mimetype='application/json'
+            mimetype='application/json',
+            status=404
         )
 
-    if not request.is_xhr:
-        return render_template('error.htm.j2', message='Non-AJAX requests not allowed.')
+    if job.is_finished:
+        return Response(
+            json.dumps(job.result),
+            mimetype='application/json',
+            status=200
+        )
+    elif job.is_failed:
+        app.logger.error("Job {} failed.\n{}".format(job_key, job.exc_info))
+        return Response(
+            json.dumps({
+                'error': True,
+                'status_msg': 'Job {} failed to complete.'.format(job_key)
+            }),
+            mimetype='application/json',
+            status=500
+        )
+    else:
+        return Response(
+            json.dumps(job.meta),
+            mimetype='application/json',
+            status=202
+        )
+
+
+def update_assignments_background(course_id, post_data):
+    """
+    Update all assignments in a course.
+
+    :param course_id: The Canvas ID of the Course.
+    :type course_id: int
+    """
+    job = get_current_job()
+
+    update_job(job, 0, 'Starting...', 'started')
 
     try:
         course = canvas.get_course(course_id)
     except CanvasException:
         msg = 'Error getting course #{}.'.format(course_id)
         app.logger.exception(msg)
-        return Response(
-            json.dumps({
-                'error': True,
-                'message': msg,
-                'updated': []
-            }),
-            mimetype='application/json'
-        )
+        update_job(job, 0, msg, 'failed', error=True)
 
-    post_data = request.form
-
-    local_tz = timezone(config.TIME_ZONE)
     assignment_field_map = defaultdict(dict)
 
     for key, value in post_data.iteritems():
@@ -217,18 +244,14 @@ def update_assignments(course_id, lti=lti):
         assignment_id, field_name = key.split('-')
         assignment_field_map[assignment_id].update({field_name: value})
 
-    if len(assignment_field_map) < 1:
-        return Response(
-            json.dumps({
-                'error': True,
-                'message': 'There were no assignments to update.',
-                'updated': []
-            }),
-            mimetype='application/json'
-        )
+    num_assignments = len(assignment_field_map)
+
+    if num_assignments < 1:
+        update_job(job, 0, 'There were no assignments to update.', 'failed', error=True)
+        return job.meta
 
     updated_list = []
-    for assignment_id, field in assignment_field_map.iteritems():
+    for index, (assignment_id, field) in enumerate(assignment_field_map.iteritems(), 1):
         assignment_type = field.get('assignment_type', 'assignment')
         quiz_id = field.get('quiz_id')
 
@@ -238,6 +261,16 @@ def update_assignments(course_id, lti=lti):
             'lock_at': fix_date(field.get('lock_at')),
             'unlock_at': fix_date(field.get('unlock_at')),
         }
+
+        comp_perc = int((index / num_assignments) * 100)
+        msg = 'Updating Assignment #{} [{} of {}]'
+        update_job(
+            job,
+            comp_perc,
+            msg.format(assignment_id, index, num_assignments),
+            'processing',
+            error=False
+        )
 
         if assignment_type == 'quiz' and quiz_id:
             payload.update({
@@ -258,11 +291,12 @@ def update_assignments(course_id, lti=lti):
                     'type': 'Quiz'
                 })
             except CanvasException:
-                app.logger.exception('Error getting/editing quiz #{}.'.format(
-                    quiz_id
-                ))
+                msg = 'Error getting/editing quiz #{}.'.format(quiz_id)
 
-                return error_json(assignment_id, updated_list)
+                app.logger.exception(msg)
+                update_job(job, comp_perc, msg, 'failed', error=True)
+
+                return job.meta
 
         else:
             try:
@@ -274,26 +308,50 @@ def update_assignments(course_id, lti=lti):
                     'type': 'Assignment'
                 })
             except CanvasException:
-                app.logger.exception('Error getting/editing assignment #{}.'.format(
-                    assignment_id
-                ))
+                msg = 'Error getting/editing assignment #{}.'.format(assignment_id)
 
-                return error_json(assignment_id, updated_list)
+                app.logger.exception(msg)
+                update_job(job, comp_perc, msg, 'failed', error=True)
 
+                return job.meta
+
+    msg = 'Successfully updated {} assignments.'.format(len(updated_list))
+    update_job(job, 100, msg, 'complete', error=False)
+    job.meta['updated_list'] = updated_list
+    job.save()
+
+    return job.meta
+
+
+@app.route('/course/<course_id>/update', methods=['POST'])
+@lti(error=error, request='session', role='staff', app=app)
+def update_assignments(course_id, lti=lti):
+    """
+    Creates a new `update_assignments_background` job.
+
+    :param course_id: The Canvas ID of the Course.
+    :type course_id: int
+
+    :rtype: flask.Response
+    :returns: A JSON-formatted response containing a URL for the started job.
+    """
+
+    job = q.enqueue_call(
+        func=update_assignments_background, args=(course_id, request.form)
+    )
     return Response(
         json.dumps({
-            'error': False,
-            'message': 'Successfully updated {} assignments.'.format(len(updated_list)),
-            'updated': updated_list,
+            'update_assignments_job_url': url_for('job_status', job_key=job.get_id())
         }),
-        mimetype='application/json'
+        mimetype='application/json',
+        status=202
     )
 
 
 @app.route('/lti.xml', methods=['GET'])
 def xml():
     return Response(
-        render_template('lti.xml.j2'),
+        render_template('lti.xml.j2', course_nav_disabled=config.DISABLE_COURSE_NAV),
         mimetype='application/xml'
     )
 
