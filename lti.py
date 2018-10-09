@@ -6,6 +6,7 @@ import json
 import logging
 from logging.handlers import RotatingFileHandler
 import re
+from subprocess import call
 
 import requests
 
@@ -16,6 +17,7 @@ from canvasapi.exceptions import CanvasException
 from pylti.flask import lti
 from pytz import utc, timezone
 import redis
+from redis.exceptions import ConnectionError
 from rq import get_current_job, Queue
 from rq.job import Job
 from rq.exceptions import NoSuchJobError
@@ -92,29 +94,43 @@ def status():
         },
         'url': url_for('index', _external=True),
         'canvas_url': config.CANVAS_URL,
-        'debug': app.debug
+        'debug': app.debug,
+        'xml_url': url_for('xml', _external=True),
     }
 
     # Check index
     try:
         response = requests.get(url_for('index', _external=True), verify=False)
         status['checks']['index'] = response.text == 'Please contact your System Administrator.'
-    except Exception as e:
+    except Exception:
         app.logger.exception('Index check failed.')
 
     # Check xml
     try:
         response = requests.get(url_for('xml', _external=True), verify=False)
         status['checks']['xml'] = 'application/xml' in response.headers.get('Content-Type')
-    except Exception as e:
+    except Exception:
         app.logger.exception('XML check failed.')
 
     # Check API Key
     try:
         self_user = canvas.get_user('self')
         status['checks']['api_key'] = isinstance(self_user, User)
-    except Exception as e:
+    except Exception:
         app.logger.exception('API check failed.')
+
+    # Check redis
+    try:
+        response = conn.echo('test')
+        status['checks']['redis'] = response == 'test'
+    except ConnectionError:
+        app.logger.exception('Redis connection failed.')
+
+    # Check RQ Worker
+    status['checks']['worker'] = call(
+        'ps aux | grep "rq worker" | grep "ddc" | grep -v grep',
+        shell=True
+    ) == 0
 
     # Overall health check - if all checks are True
     status['healthy'] = all(v is True for k, v in status['checks'].items())
@@ -335,7 +351,7 @@ def update_assignments(course_id, lti=lti):
 @app.route('/lti.xml', methods=['GET'])
 def xml():
     return Response(
-        render_template('lti.xml.j2'),
+        render_template('lti.xml.j2', course_nav_disabled=config.DISABLE_COURSE_NAV),
         mimetype='application/xml'
     )
 

@@ -12,9 +12,10 @@
         <lticm:options name="course_navigation">
             <lticm:property name="url">{{ url_for('launch', _external=True) }}</lticm:property>
             <lticm:property name="visibility">admins</lticm:property>
-            <lticm:property name="default">disabled</lticm:property>
+            {% if course_nav_disabled %}
+                <lticm:property name="default">disabled</lticm:property>
+            {% endif %}
             <lticm:property name="enabled">true</lticm:property>
-            
         </lticm:options>
         <lticm:property name="icon_url"></lticm:property>
         <lticm:property name="link_text">Due Date Changer</lticm:property>
