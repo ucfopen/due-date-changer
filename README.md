@@ -5,7 +5,8 @@ An LTI that allows a user to easily change due dates for multiple assignments si
 ## Table of Contents
 
 * [Installation](#installation)
-* [Running the Development Server](#running-the-development-server)
+* [Development Server](#development-server)
+* [Production Server](#production-server)
 * [Contributing](#contributing)
 * [Contact Us](#contact-us)
 
@@ -108,7 +109,7 @@ Install required packages
   pip install -r requirements.txt
   ```
 
-## Running the Development Server
+## Development Server
 
 If you haven't already, activate the virtual environment and set up Flask
 environment variables.
@@ -135,6 +136,83 @@ Check the status page at `/status` ([http://127.0.0.1:5000/status](http://127.0.
 working properly.
 
 *Note: for the status page to work, the app must be run with threading enabled.*
+
+## Production Server
+
+Due Date Changer is tested to run NGINX and uWSGI, but can also work on Apache and mod_wsgi.
+
+### NGINX
+
+`nginx.conf`
+
+In your nginx.conf file, place these lines under the server{} section with the appropriate changes
+
+```nginx
+location /due_date_changer/static {
+    alias /path/to/due_date_changer/static/;
+}
+
+
+location /due_date_changer {
+    root html;
+    include uwsgi_params;
+
+    uwsgi_param                  UWSGI_SCHEME https; # Set to https is behind load balancer, else http
+    uwsgi_param                  SCRIPT_NAME /due_date_changer;
+    uwsgi_modifier1              30;
+    uwsgi_pass                   127.0.0.1:9000;  #set to any number above 9000 that isn't in use.
+    uwsgi_read_timeout           300;
+    uwsgi_connect_timeout        300;
+    uwsgi_send_timeout           300;
+    proxy_redirect               off;
+    proxy_set_header             Host $host;
+    proxy_set_header             X-Real-IP $remote_addr;
+    proxy_set_header             X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header             X-Forwarded-Host example.com; #Add your domain here.
+}
+```
+
+### UWSGI
+
+`/etc/uwsgi/sites-enabled/due_date_changer.ini`
+
+```ini
+[uwsgi]
+# uwsgi process runs as user:group
+uid = nginx
+gid = nginx
+
+# Number of worker processes
+processes = 6
+
+chdir = /path/to/due_date_changer/
+venv = /path/to/due_date_changer/env
+
+
+socket = 127.0.0.1:9000 #Same Socket number as above
+
+# Respawn slow processes
+harakiri=60
+harakiri-verbose=True
+
+master=True
+
+# name of wsgi file in the chdir dir above without the .py extension
+wsgi-file = wsgi.py
+
+# Background the process (and allow it to log!)
+daemonize = /var/log/uwsgi/app.log
+
+# Reload the uwsgi process if the wsgi file is touched
+touch-reload = /path/to/due_date_changer/wsgi.py
+
+#testing saveSnapshot fix
+buffer-size=16384
+#post-buffering=1
+
+#stats
+stats = /tmp/wsgi.py.socket
+```
 
 ## Contact Us
 
