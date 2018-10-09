@@ -3,17 +3,17 @@
 from __future__ import unicode_literals
 
 DEBUG = False
-SECRET_KEY = ''
+SECRET_KEY = ''  # A secret key used by Flask for signing. KEEP THIS SECRET! (e.g. 'JbwLnLgsfxDInozQudc6IFPe0eYecW8f')
 
 ALLOWED_CANVAS_DOMAINS = []  # A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
 
-CANVAS_URL = ''  # ex. `https://example.instructure.com`
-API_KEY = ''
+CANVAS_URL = ''  # Canvas Instance URL ex. `https://example.instructure.com`
+API_KEY = ''  # Canvas API Key
 
 PYLTI_CONFIG = {
     'consumers': {
-        'key': {
-            'secret': b'secret'  # secret must be bytes (b'')
+        'key': {  # consumer key
+            'secret': b'secret'  # shared secret must be bytes (b'')
         }
     },
     'roles': {
