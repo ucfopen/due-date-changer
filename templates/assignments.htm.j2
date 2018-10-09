@@ -9,13 +9,14 @@
 
 <h1>Due Date Changer</h1>
 
-<div id="top_buttons" class="text-right">
-	<button type="button" id="expand_all_btn" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-plus"></span> Expand All</button>
-	<button type="button" id="collapse_all_btn" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-minus"></span> Collapse All</button>
-</div>
+<div id="test_box" class="container">
 
-<form id="assignments_form" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
-	<div id="test_box" class="container">
+	<div id="top_buttons" class="text-right">
+		<button type="button" id="expand_all_btn" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-plus"></span> Expand All</button>
+		<button type="button" id="collapse_all_btn" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-minus"></span> Collapse All</button>
+	</div>
+
+	<form id="assignments_form" action="{{ url_for('update_assignments', course_id=course.id) }}" method="post">
 
 	{% for assignment in assignments %}
 	<div class="row {{ loop.cycle('odd', '') }}" data-assignment-id="{{ assignment.id }}">
@@ -129,9 +130,9 @@
 	<p class="text-center">No Assignments Found</p>
 	</div>
 	{% endfor %}
-	</div><!-- /test_box -->
 	<input class="btn btn-success" type="submit" value="Submit">
-</form>
+	</form>
+</div><!-- /test_box -->
 
 <!-- Modal -->
 <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel">
@@ -204,6 +205,7 @@
 		function link_pickers(start, end) {
 			$(start).datetimepicker({useCurrent: false});
 			$(end).datetimepicker({useCurrent: false});
+
 			$(start).on("dp.change", function(e) {
 				$(end).data("DateTimePicker").minDate(e.date);
 			});
@@ -285,9 +287,8 @@
 					prog_bar.removeClass("progress-bar-info");
 					clearInterval(update_interval_id);
 					update_div.find(".status-msg").attr("style", "color: #000;");
-
-					$('#close_button').prop('disabled', false);
 				}
+				$('#close_button').prop('disabled', false);
 
 			})
 			.fail(function(data) {
