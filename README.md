@@ -1,6 +1,6 @@
 # Due Date Changer
 
-[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/ucfcdl/due-date-changer/tree/heroku)
+[![Deploy](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy?template=https://github.com/ucfopen/due-date-changer/tree/heroku)
 
 An LTI that allows a user to easily change due dates for multiple assignments simultaneously.
 
