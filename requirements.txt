@@ -3,3 +3,4 @@ canvasapi==0.11.0
 -e git+https://github.com/ucfcdl/pylti.git@roles#egg=PyLTI
 pytz==2018.5
 oauthlib==2.1.0
+gunicorn
