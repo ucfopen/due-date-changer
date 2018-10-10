@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-import os
 from __future__ import unicode_literals
+
+import os
 
 DEBUG = False
 SECRET_KEY = os.environ.get("SECRET_KEY", "CHANGEME") # A secret key used by Flask for signing. KEEP THIS SECRET! (e.g. 'JbwLnLgsfxDInozQudc6IFPe0eYecW8f')
