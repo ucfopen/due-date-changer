@@ -1,0 +1,48 @@
+{
+	"name": "Due Date Changer",
+	"description": "An LTI for Instructure Canvas that allows you to quickly update all the due dates in your course.",
+	"keywords": [
+		"education",
+		"canvas",
+		"CDL",
+		"EDU",
+		"UCF",
+		"Instructure",
+		"Quiz"
+	],
+	"website": "https://online.ucf.edu/support/webcourses/integrations/",
+	"repository": "https://github.com/ucfopen/due-date-changer/tree/heroku",
+	"success_url": "/",
+	"env": {
+		"CANVAS_URL": {
+			"description": "Canvas API URL"
+		},
+		"API_KEY": {
+			"description": "Canvas API Key"
+
+		},
+		"SECRET_KEY": {
+			"description": "Flask Secret Key (Enter in a long string)"
+
+		},
+		"LTI_KEY": {
+			"description": "LTI consumer key entered when adding an LTI to Canvas"
+
+		},
+		"LTI_SECRET": {
+			"description": "LTI secret entered when adding an LTI to Canvas"
+
+		},
+		"ALLOWED_CANVAS_DOMAINS": {
+			"description": "List of Canvas domains that are whitelisted to use the tool: eg. ['canvas.instructure.com']"
+
+		},
+		"USE_HEROKU_CONFIG": {
+			"description": "needed to use the Heroku configuration",
+			"value": "true"
+		}
+	},
+	"buildpacks": [{
+		"url": "https://github.com/heroku/heroku-buildpack-python"
+	}]
+}
