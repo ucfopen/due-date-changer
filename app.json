@@ -15,14 +15,14 @@
 	"success_url": "/",
 	"env": {
 		"CANVAS_URL": {
-			"description": "Canvas API URL"
+			"description": "Canvas API URL - ex: https://canvas.university.edu/"
 		},
 		"API_KEY": {
-			"description": "Canvas API Key"
+			"description": "Canvas API Key - Generated under User Settings"
 
 		},
 		"SECRET_KEY": {
-			"description": "Flask Secret Key (Enter in a long string)"
+			"description": "Flask Secret Key (Enter in a long string ex: fjlfn4o489bgjkgnggibn34g...)"
 
 		},
 		"LTI_KEY": {
