@@ -91,11 +91,14 @@ def status():
             'index': False,
             'xml': False,
             'api_key': False,
+            'redis': False,
+            'worker': False
         },
         'url': url_for('index', _external=True),
         'canvas_url': config.CANVAS_URL,
         'debug': app.debug,
         'xml_url': url_for('xml', _external=True),
+        'job_queue': len(q.jobs)
     }
 
     # Check index
