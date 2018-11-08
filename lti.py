@@ -98,7 +98,7 @@ def status():
         'canvas_url': config.CANVAS_URL,
         'debug': app.debug,
         'xml_url': url_for('xml', _external=True),
-        'job_queue': len(q.jobs)
+        'job_queue': None
     }
 
     # Check index
@@ -129,6 +129,12 @@ def status():
     except ConnectionError:
         app.logger.exception('Redis connection failed.')
 
+    # Get redis queue length
+    try:
+        status['job_queue'] = len(q.jobs)
+    except ConnectionError:
+        app.logger.exception('Unable to get job queue length.')
+
     # Check RQ Worker
     status['checks']['worker'] = call(
         'ps aux | grep "rq worker" | grep "ddc" | grep -v grep',
@@ -136,7 +142,10 @@ def status():
     ) == 0
 
     # Overall health check - if all checks are True
-    status['healthy'] = all(v is True for k, v in status['checks'].items())
+    checks_pass = all(v is True for k, v in status['checks'].items())
+    queue_healthy = status['job_queue'] is not None
+
+    status['healthy'] = checks_pass and queue_healthy
 
     return Response(
         json.dumps(status),

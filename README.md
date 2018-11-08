@@ -137,6 +137,18 @@ working properly.
 
 *Note: for the status page to work, the app must be run with threading enabled.*
 
+Ensure Redis is running. If not, start it with
+
+```sh
+redis-server --daemonize yes
+```
+
+Ensure RQ Worker is running. If not, start it with
+
+```sh
+rq worker ddc
+```
+
 ## Production Server
 
 Due Date Changer is tested to run NGINX and uWSGI, but can also work on Apache and mod_wsgi.
