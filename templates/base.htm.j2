@@ -61,11 +61,15 @@
         }), "*");
     }
 
+    var windowWidth = document.body.clientWidth;
     // update iframe height on resize
     window.addEventListener("resize", function(){
-        resizeFrame();
+    	if (document.body.clientWidth != windowWidth)
+        	resizeFrame();
     });
 
+	
+    
     resizeFrame();
 
 
