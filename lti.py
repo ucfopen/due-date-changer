@@ -82,6 +82,7 @@ def status():
             'api_key': False,
         },
         'url': url_for('index', _external=True),
+        'xml_url': url_for('xml', _external=True),
         'canvas_url': config.CANVAS_URL,
         'debug': app.debug
     }
