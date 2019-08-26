@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-from urllib import urlencode
+from urllib.parse import urlencode
 import oauthlib.oauth1
 import logging
 

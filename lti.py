@@ -239,7 +239,7 @@ def update_assignments_background(course_id, post_data):
 
     assignment_field_map = defaultdict(dict)
 
-    for key, value in post_data.iteritems():
+    for key, value in post_data.items():
         if not re.match(r"\d+-[a-z_]+", key):
             continue
 
@@ -253,7 +253,7 @@ def update_assignments_background(course_id, post_data):
         return job.meta
 
     updated_list = []
-    for index, (assignment_id, field) in enumerate(assignment_field_map.iteritems(), 1):
+    for index, (assignment_id, field) in enumerate(assignment_field_map.items(), 1):
         assignment_type = field.get("assignment_type", "assignment")
         quiz_id = field.get("quiz_id")
 
