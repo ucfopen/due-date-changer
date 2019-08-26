@@ -24,13 +24,10 @@ footer {
 	background-color: #f9f9f9;
 }
 
-#test_box {
+#main_container {
 	border: 1px solid #ddd;
 	border-radius: 4px;
-	max-height: 65vh;
-	width: 100%;
-	overflow: scroll;
-	margin-bottom: 10px;
+	width: 100;
 }
 
 #top_buttons {
@@ -38,5 +35,5 @@ footer {
 }
 
 .status-perc {
-    font-size: 30px;
+	font-size: 30px;
 }
