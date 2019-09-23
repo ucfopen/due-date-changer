@@ -1,5 +1,6 @@
 -r requirements.txt
 
+black==19.3b0
 blinker==1.4
 coverage==4.5.1
 Flask-Testing==0.7.1

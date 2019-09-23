@@ -1,19 +1,29 @@
 # -*- coding: utf-8 -*-
 
-from urllib.parse import urlencode
-import oauthlib.oauth1
+import re
+
+from datetime import datetime
 import logging
+import oauthlib.oauth1
+from urllib.parse import urlencode
+import unittest
+from unittest.mock import patch
 
+from fakeredis import FakeStrictRedis
 import flask_testing
-import requests_mock
 from pylti.common import LTI_SESSION_KEY
+from pytz import timezone
+import requests_mock
+from rq import Queue
 
-import lti
 
-
+@patch("config.ALLOWED_CANVAS_DOMAINS", ["example.edu"])
 @requests_mock.Mocker()
 class LTITests(flask_testing.TestCase):
+    @patch("redis.from_url", FakeStrictRedis)
     def create_app(self):
+        import lti
+
         app = lti.app
         app.config["PRESERVE_CONTEXT_ON_EXCEPTION"] = False
         app.config["API_URL"] = "http://example.edu/api/v1/"
@@ -28,21 +38,26 @@ class LTITests(flask_testing.TestCase):
     def tearDownClass(cls):
         logging.disable(logging.NOTSET)
 
+    # index()
     def test_index(self, m):
         response = self.client.get(self.generate_launch_request("/"))
 
         self.assert_200(response)
-        self.assertEqual(response.data, "Please contact your System Administrator.")
+        self.assertEqual(response.data, b"Please contact your System Administrator.")
 
+    # xml()
     def test_xml(self, m):
         response = self.client.get("/lti.xml")
-
         self.assert_200(response)
         self.assert_template_used("lti.xml.j2")
         self.assertIn("application/xml", response.content_type)
 
+    # launch()
     def test_launch(self, m):
-        payload = {"custom_canvas_course_id": "1"}
+        payload = {
+            "custom_canvas_course_id": "1",
+            "custom_canvas_api_domain": "example.edu",
+        }
 
         signed_url = self.generate_launch_request(
             "/launch",
@@ -55,6 +70,41 @@ class LTITests(flask_testing.TestCase):
 
         self.assertRedirects(response, "/course/1/assignments")
 
+    def test_launch_wrong_domain(self, m):
+        payload = {
+            "custom_canvas_course_id": "1",
+            "custom_canvas_api_domain": "example.com",
+        }
+
+        signed_url = self.generate_launch_request(
+            "/launch",
+            http_method="POST",
+            body=payload,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+
+        response = self.client.post(signed_url, data=payload)
+
+        self.assert_200(response)
+        self.assert_template_used("error.htm.j2")
+
+    def test_launch_no_domain(self, m):
+        payload = {"custom_canvas_course_id": "1"}
+
+        signed_url = self.generate_launch_request(
+            "/launch",
+            http_method="POST",
+            body=payload,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        )
+
+        response = self.client.post(signed_url, data=payload)
+
+        # import pdb; pdb.set_trace()
+        self.assert_200(response)
+        self.assert_template_used("error.htm.j2")
+
+    # show_assignments()
     def test_show_assignments_role_student(self, m):
         with self.client.session_transaction() as sess:
             sess[LTI_SESSION_KEY] = True
@@ -174,7 +224,7 @@ class LTITests(flask_testing.TestCase):
                 {
                     "id": 1,
                     "title": "Quiz 1",
-                    "show_correct_answers_at": "2017-01-01T00:00:01Z",
+                    "show_correct_answers_at": "2017-01-13T00:00:01Z",
                     "hide_correct_answers_at": "2017-12-31T23:59:59Z",
                 },
                 {"id": 2, "title": "Quiz 2"},
@@ -202,50 +252,16 @@ class LTITests(flask_testing.TestCase):
         self.assertIsInstance(assignments, list)
         self.assertEqual(len(assignments), 4)
 
-    def test_update_assignments_role_student(self, m):
-        with self.client.session_transaction() as sess:
-            sess[LTI_SESSION_KEY] = True
-            sess["oauth_consumer_key"] = "key"
-            sess["roles"] = "Student"
+    # update_assignments()
+    def test_update_assignments(self, m):
+        from rq.job import Job
 
-        response = self.client.post(
-            self.generate_launch_request("/course/1/update", http_method="POST")
-        )
-
-        self.assert_200(response)
-        self.assert_template_used("error.htm.j2")
-        self.assertEqual(str(self.get_context_variable("message")), "Not authorized.")
-
-    def test_update_assignments_no_xhr(self, m):
         with self.client.session_transaction() as sess:
             sess[LTI_SESSION_KEY] = True
             sess["oauth_consumer_key"] = "key"
             sess["roles"] = "Instructor"
 
-        response = self.client.post(
-            self.generate_launch_request("/course/1/update", http_method="POST")
-        )
-
-        self.assert_200(response)
-        self.assert_template_used("error.htm.j2")
-        self.assertEqual(
-            self.get_context_variable("message"), "Non-AJAX requests not allowed."
-        )
-
-    def test_update_assignments_invalid_data(self, m):
-        with self.client.session_transaction() as sess:
-            sess[LTI_SESSION_KEY] = True
-            sess["oauth_consumer_key"] = "key"
-            sess["roles"] = "Instructor"
-
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1",
-            json={"id": 1, "name": "Course 1"},
-            status_code=200,
-        )
-
-        payload = {"key": "value"}
+        payload = {"42-assignment_type": "assignment", "42-published": False}
         headers = {
             "X-Requested-With": "XMLHttpRequest",
             "Content-Type": "application/x-www-form-urlencoded",
@@ -261,309 +277,335 @@ class LTITests(flask_testing.TestCase):
             data=payload,
             headers=headers,
         )
-        self.assert_200(response)
-        self.assertIn("application/json", response.content_type)
+
+        self.assertEqual(response.status_code, 202)
         self.assertTrue(hasattr(response, "json"))
         self.assertIsInstance(response.json, dict)
-        self.assertTrue(response.json["error"])
-        self.assertEqual(
-            response.json["message"], "There were no assignments to update."
-        )
-        self.assertEqual(len(response.json["updated"]), 0)
+        self.assertIn("update_assignments_job_url", response.json)
+        self.assertIn("/jobs/", response.json["update_assignments_job_url"])
 
-    def test_update_assignments_invalid_course(self, m):
-        with self.client.session_transaction() as sess:
-            sess[LTI_SESSION_KEY] = True
-            sess["oauth_consumer_key"] = "key"
-            sess["roles"] = "Instructor"
+        id_pat = r"[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}"
+        job_id = re.search(id_pat, response.json["update_assignments_job_url"])[0]
+
+        job = Job.fetch(job_id, connection=self.app.conn)
+
+        self.assertIsInstance(job, Job)
+        self.assertTrue(hasattr(job, "meta"))
+        self.assertIsInstance(job.meta, dict)
+        self.assertIn("status", job.meta)
+        self.assertEqual(job.meta["status"], "queued")
+
+    # job_status()
+    def test_job_status_no_such_job(self, m):
+        response = self.client.get("/jobs/fakejob/")
+
+        self.assertEqual(response.status_code, 404)
+
+        self.assertTrue(hasattr(response, "json"))
+        self.assertIsInstance(response.json, dict)
+        self.assertIn("error", response.json)
+        self.assertTrue(response.json["error"])
+
+        self.assertIn("status_msg", response.json)
+        self.assertEqual(response.json["status_msg"], "fakejob is not a valid job key.")
+
+    def test_job_status_finished(self, m):
+        def test_func():
+            pass  # pragma: nocover
+
+        job = self.app.q.enqueue_call(test_func)
+        job.set_status("finished")
+        job._result = {"status": "done"}
+        job.save()
+        response = self.client.get(f"/jobs/{job.id}/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json, {"status": "done"})
+
+    def test_job_status_failed(self, m):
+        def test_func():
+            pass  # pragma: nocover
+
+        job = self.app.q.enqueue_call(test_func)
+        job.set_status("failed")
+        response = self.client.get(f"/jobs/{job.id}/")
+
+        self.assertEqual(response.status_code, 500)
+
+        self.assertTrue(hasattr(response, "json"))
+        self.assertIsInstance(response.json, dict)
+        self.assertIn("error", response.json)
+        self.assertTrue(response.json["error"])
+
+        self.assertIn("status_msg", response.json)
+        self.assertEqual(
+            response.json["status_msg"], f"Job {job.id} failed to complete."
+        )
+
+    def test_job_status(self, m):
+        def test_func():
+            pass  # pragma: nocover
+
+        job = self.app.q.enqueue_call(test_func)
+        job.meta = {"status": "accepted"}
+        job.save()
+        response = self.client.get(f"/jobs/{job.id}/")
+
+        self.assertEqual(response.status_code, 202)
+
+        self.assertTrue(hasattr(response, "json"))
+        self.assertIsInstance(response.json, dict)
+        self.assertIn("status", response.json)
+        self.assertEqual(response.json["status"], "accepted")
+
+    # update_assignments_background
+    def test_update_assignments_background_invalid_course(self, m):
+        from lti import update_assignments_background
 
         m.register_uri("GET", "/api/v1/courses/1", status_code=404)
 
-        payload = {"key": "value"}
-        headers = {
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
+        queue = Queue(is_async=False, connection=FakeStrictRedis())
+        job = queue.enqueue_call(func=update_assignments_background, args=(1, {}))
+        self.assertTrue(job.is_finished)
 
-        response = self.client.post(
-            self.generate_launch_request(
-                "/course/1/update",
-                http_method="POST",
-                body=urlencode(payload),
-                headers=headers,
-            ),
-            data=payload,
-            headers=headers,
-        )
+        self.assertTrue(hasattr(job, "result"))
+        self.assertIsInstance(job.result, dict)
+        self.assertIn("status", job.result)
+        self.assertEqual(job.result["status"], "failed")
+        self.assertIn("status_msg", job.result)
+        self.assertEqual(job.result["status_msg"], "Error getting course #1.")
+        self.assertIn("percent", job.result)
+        self.assertEqual(job.result["percent"], 0)
+        self.assertIn("error", job.result)
+        self.assertTrue(job.result["error"])
 
-        self.assert_200(response)
-        self.assertIn("application/json", response.content_type)
-        self.assertTrue(hasattr(response, "json"))
-        self.assertIsInstance(response.json, dict)
-        self.assertTrue(response.json["error"])
-        self.assertEqual(response.json["message"], "Error getting course #1.")
-        self.assertEqual(len(response.json["updated"]), 0)
+    def test_update_assignments_background_no_assignments(self, m):
+        from lti import update_assignments_background
 
-    def test_update_assignments_edit_assignment_error(self, m):
-        with self.client.session_transaction() as sess:
-            sess[LTI_SESSION_KEY] = True
-            sess["oauth_consumer_key"] = "key"
-            sess["roles"] = "Instructor"
+        m.register_uri("GET", "/api/v1/courses/1", json={"id": 1}, status_code=200)
 
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1",
-            json={"id": 1, "name": "Course 1"},
-            status_code=200,
-        )
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1/assignments/42",
-            json={"id": 42, "name": "The Answer", "course_id": 1},
-            status_code=200,
-        ),
-        m.register_uri("PUT", "/api/v1/courses/1/assignments/42", status_code=404)
+        queue = Queue(is_async=False, connection=FakeStrictRedis())
+        job = queue.enqueue_call(func=update_assignments_background, args=(1, {}))
+        self.assertTrue(job.is_finished)
 
-        payload = {"42-assignment_type": "assignment", "42-published": False}
-        headers = {
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-
-        response = self.client.post(
-            self.generate_launch_request(
-                "/course/1/update",
-                http_method="POST",
-                body=urlencode(payload),
-                headers=headers,
-            ),
-            data=payload,
-            headers=headers,
-        )
-
-        self.assert_200(response)
-        self.assertIn("application/json", response.content_type)
-        self.assertTrue(hasattr(response, "json"))
-        self.assertIsInstance(response.json, dict)
-        self.assertTrue(response.json["error"])
+        self.assertTrue(hasattr(job, "result"))
+        self.assertIsInstance(job.result, dict)
+        self.assertIn("status", job.result)
+        self.assertEqual(job.result["status"], "failed")
+        self.assertIn("status_msg", job.result)
         self.assertEqual(
-            response.json["message"],
-            "There was an error editing one of the assignments. (ID: 42)",
+            job.result["status_msg"], "There were no assignments to update."
         )
-        self.assertEqual(len(response.json["updated"]), 0)
+        self.assertIn("percent", job.result)
+        self.assertEqual(job.result["percent"], 0)
+        self.assertIn("error", job.result)
+        self.assertTrue(job.result["error"])
 
-    def test_update_assignments_no_quiz(self, m):
-        with self.client.session_transaction() as sess:
-            sess[LTI_SESSION_KEY] = True
-            sess["oauth_consumer_key"] = "key"
-            sess["roles"] = "Instructor"
+    def test_update_assignments_background_invalid_data(self, m):
+        from lti import update_assignments_background
 
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1",
-            json={"id": 1, "name": "Course 1"},
-            status_code=200,
+        m.register_uri("GET", "/api/v1/courses/1", json={"id": 1}, status_code=200)
+
+        queue = Queue(is_async=False, connection=FakeStrictRedis())
+        job = queue.enqueue_call(
+            func=update_assignments_background, args=(1, {"key": "value"})
         )
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1/assignments/42",
-            json={"id": 42, "name": "The Answer", "course_id": 1},
-            status_code=200,
-        ),
-        m.register_uri(
-            "PUT",
-            "/api/v1/courses/1/assignments/42",
-            json={"id": 42, "name": "The Answer", "course_id": 1},
-            status_code=200,
-        )
+        self.assertTrue(job.is_finished)
 
-        payload = {"42-assignment_type": "assignment", "42-published": False}
-        headers = {
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-
-        response = self.client.post(
-            self.generate_launch_request(
-                "/course/1/update",
-                http_method="POST",
-                body=urlencode(payload),
-                headers=headers,
-            ),
-            data=payload,
-            headers=headers,
-        )
-
-        self.assert_200(response)
-        self.assertIn("application/json", response.content_type)
-        self.assertTrue(hasattr(response, "json"))
-        self.assertIsInstance(response.json, dict)
-        self.assertFalse(response.json["error"])
+        self.assertTrue(hasattr(job, "result"))
+        self.assertIsInstance(job.result, dict)
+        self.assertIn("status", job.result)
+        self.assertEqual(job.result["status"], "failed")
+        self.assertIn("status_msg", job.result)
         self.assertEqual(
-            response.json["message"], "Successfully updated 1 assignments."
+            job.result["status_msg"], "There were no assignments to update."
         )
-        self.assertEqual(len(response.json["updated"]), 1)
+        self.assertIn("percent", job.result)
+        self.assertEqual(job.result["percent"], 0)
+        self.assertIn("error", job.result)
+        self.assertTrue(job.result["error"])
 
-    def test_update_assignments_missing_quiz(self, m):
-        with self.client.session_transaction() as sess:
-            sess[LTI_SESSION_KEY] = True
-            sess["oauth_consumer_key"] = "key"
-            sess["roles"] = "Instructor"
+    def test_update_assignments_background_quiz(self, m):
+        from lti import update_assignments_background
 
+        m.register_uri("GET", "/api/v1/courses/1", json={"id": 1}, status_code=200)
         m.register_uri(
             "GET",
-            "/api/v1/courses/1",
-            json={"id": 1, "name": "Course 1"},
-            status_code=200,
-        )
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1/assignments/42",
-            json={"id": 42, "name": "The Answer", "course_id": 1},
-            status_code=200,
-        ),
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1/assignments/10",
-            json={"id": 10, "name": "Quiz Assignment", "course_id": 1, "quiz_id": 55},
-            status_code=200,
-        ),
-        m.register_uri(
-            "PUT",
-            "/api/v1/courses/1/assignments/42",
-            json={"id": 42, "name": "The Answer", "course_id": 1},
+            "/api/v1/courses/1/quizzes/5",
+            json={"id": 5, "title": "Quiz 1"},
             status_code=200,
         )
         m.register_uri(
             "PUT",
-            "/api/v1/courses/1/assignments/10",
-            json={"id": 10, "name": "Quiz Assignment", "course_id": 1, "quiz_id": 55},
+            "/api/v1/courses/1/quizzes/5",
+            json={"id": 5, "title": "Quiz 1", "due_at": "2020-01-13T10:00:00-05:00"},
             status_code=200,
         )
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1/quizzes/55",
-            json={"id": 55, "title": "Quiz Assignment", "course_id": 1},
-            status_code=404,
-        )
 
-        payload = {
-            "42-assignment_type": "assignment",
-            "42-published": "on",
-            "10-assignment_type": "quiz",
-            "10-quiz_id": 55,
-            "10-published": "on",
-            "10-due_at": "01/01/2017 10:00 AM",
-        }
-        headers = {
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-
-        response = self.client.post(
-            self.generate_launch_request(
-                "/course/1/update",
-                http_method="POST",
-                body=urlencode(payload),
-                headers=headers,
+        queue = Queue(is_async=False, connection=FakeStrictRedis())
+        job = queue.enqueue_call(
+            func=update_assignments_background,
+            args=(
+                1,
+                {
+                    "10-due_at": "01/13/2020 10:00 AM",
+                    "10-assignment_type": "quiz",
+                    "10-quiz_id": 5,
+                },
             ),
-            data=payload,
-            headers=headers,
         )
+        self.assertTrue(job.is_finished)
 
-        self.assert_200(response)
-        self.assertIn("application/json", response.content_type)
-        self.assertTrue(hasattr(response, "json"))
-        self.assertIsInstance(response.json, dict)
-        self.assertTrue(response.json["error"])
+        self.assertTrue(hasattr(job, "result"))
+        self.assertIsInstance(job.result, dict)
+        self.assertIn("status", job.result)
+        self.assertEqual(job.result["status"], "complete")
+        self.assertIn("status_msg", job.result)
         self.assertEqual(
-            response.json["message"],
-            "There was an error editing one of the assignments. (ID: 10)",
+            job.result["status_msg"], "Successfully updated 1 assignments."
         )
-        self.assertEqual(len(response.json["updated"]), 0)
+        self.assertIn("percent", job.result)
+        self.assertEqual(job.result["percent"], 100)
+        self.assertIn("error", job.result)
+        self.assertFalse(job.result["error"])
 
-    def test_update_assignments_working_quiz(self, m):
-        with self.client.session_transaction() as sess:
-            sess[LTI_SESSION_KEY] = True
-            sess["oauth_consumer_key"] = "key"
-            sess["roles"] = "Instructor"
+    def test_update_assignments_background_quiz_fail(self, m):
+        from lti import update_assignments_background
 
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1",
-            json={"id": 1, "name": "Course 1"},
-            status_code=200,
-        )
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1/assignments/42",
-            json={"id": 42, "name": "The Answer", "course_id": 1},
-            status_code=200,
-        ),
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1/assignments/10",
-            json={"id": 10, "name": "Quiz Assignment", "course_id": 1, "quiz_id": 55},
-            status_code=200,
-        ),
-        m.register_uri(
-            "PUT",
-            "/api/v1/courses/1/assignments/42",
-            json={"id": 42, "name": "The Answer", "course_id": 1},
-            status_code=200,
-        )
-        m.register_uri(
-            "PUT",
-            "/api/v1/courses/1/assignments/10",
-            json={"id": 10, "name": "Quiz Assignment", "course_id": 1, "quiz_id": 55},
-            status_code=200,
-        )
-        m.register_uri(
-            "GET",
-            "/api/v1/courses/1/quizzes/55",
-            json={"id": 55, "title": "Quiz Assignment", "course_id": 1},
-            status_code=200,
-        )
-        m.register_uri(
-            "PUT",
-            "/api/v1/courses/1/quizzes/55",
-            json={"id": 55, "title": "Quiz Assignment", "course_id": 1},
-            status_code=200,
-        )
+        m.register_uri("GET", "/api/v1/courses/1", json={"id": 1}, status_code=200)
+        m.register_uri("GET", "/api/v1/courses/1/quizzes/5", status_code=404)
 
-        payload = {
-            "42-assignment_type": "assignment",
-            "42-published": "on",
-            "10-assignment_type": "quiz",
-            "10-quiz_id": 55,
-            "10-published": "on",
-            "10-due_at": "01/01/2017 10:00 AM",
-        }
-        headers = {
-            "X-Requested-With": "XMLHttpRequest",
-            "Content-Type": "application/x-www-form-urlencoded",
-        }
-
-        response = self.client.post(
-            self.generate_launch_request(
-                "/course/1/update",
-                http_method="POST",
-                body=urlencode(payload),
-                headers=headers,
+        queue = Queue(is_async=False, connection=FakeStrictRedis())
+        job = queue.enqueue_call(
+            func=update_assignments_background,
+            args=(
+                1,
+                {
+                    "10-due_at": "01/13/2020 10:00 AM",
+                    "10-assignment_type": "quiz",
+                    "10-quiz_id": 5,
+                },
             ),
-            data=payload,
-            headers=headers,
+        )
+        self.assertTrue(job.is_finished)
+
+        self.assertTrue(hasattr(job, "result"))
+        self.assertIsInstance(job.result, dict)
+        self.assertIn("status", job.result)
+        self.assertEqual(job.result["status"], "failed")
+        self.assertIn("status_msg", job.result)
+        self.assertEqual(job.result["status_msg"], "Error getting/editing quiz #5.")
+        self.assertIn("percent", job.result)
+        self.assertEqual(job.result["percent"], 100)
+        self.assertIn("error", job.result)
+        self.assertTrue(job.result["error"])
+
+    def test_update_assignments_background_assignment(self, m):
+        from lti import update_assignments_background
+
+        m.register_uri("GET", "/api/v1/courses/1", json={"id": 1}, status_code=200)
+        m.register_uri(
+            "GET",
+            "/api/v1/courses/1/assignments/11",
+            json={"id": 11, "name": "Assignment 1", "course_id": 1},
+            status_code=200,
+        )
+        m.register_uri(
+            "PUT",
+            "/api/v1/courses/1/assignments/11",
+            json={
+                "id": 11,
+                "name": "Assignment 1",
+                "due_at": "2020-01-13T10:00:00-05:00",
+                "course_id": 1,
+            },
+            status_code=200,
         )
 
-        self.assert_200(response)
-        self.assertIn("application/json", response.content_type)
-        self.assertTrue(hasattr(response, "json"))
-        self.assertIsInstance(response.json, dict)
-        self.assertFalse(response.json["error"])
-        self.assertEqual(
-            response.json["message"], "Successfully updated 2 assignments."
+        queue = Queue(is_async=False, connection=FakeStrictRedis())
+        job = queue.enqueue_call(
+            func=update_assignments_background,
+            args=(
+                1,
+                {
+                    "11-due_at": "01/13/2020 11:00 AM",
+                    "11-assignment_type": "assignment",
+                },
+            ),
         )
-        self.assertEqual(len(response.json["updated"]), 2)
+        self.assertTrue(job.is_finished)
+
+        self.assertTrue(hasattr(job, "result"))
+        self.assertIsInstance(job.result, dict)
+        self.assertIn("status", job.result)
+        self.assertEqual(job.result["status"], "complete")
+        self.assertIn("status_msg", job.result)
+        self.assertEqual(
+            job.result["status_msg"], "Successfully updated 1 assignments."
+        )
+        self.assertIn("percent", job.result)
+        self.assertEqual(job.result["percent"], 100)
+        self.assertIn("error", job.result)
+        self.assertFalse(job.result["error"])
+
+    def test_update_assignments_background_assignment_fail(self, m):
+        from lti import update_assignments_background
+
+        m.register_uri("GET", "/api/v1/courses/1", json={"id": 1}, status_code=200)
+        m.register_uri("GET", "/api/v1/courses/1/assignments/11", status_code=404)
+
+        queue = Queue(is_async=False, connection=FakeStrictRedis())
+        job = queue.enqueue_call(
+            func=update_assignments_background,
+            args=(
+                1,
+                {
+                    "11-due_at": "01/13/2020 11:00 AM",
+                    "11-assignment_type": "assignment",
+                },
+            ),
+        )
+        self.assertTrue(job.is_finished)
+
+        self.assertTrue(hasattr(job, "result"))
+        self.assertIsInstance(job.result, dict)
+        self.assertIn("status", job.result)
+        self.assertEqual(job.result["status"], "failed")
+        self.assertIn("status_msg", job.result)
+        self.assertEqual(
+            job.result["status_msg"], "Error getting/editing assignment #11."
+        )
+        self.assertIn("percent", job.result)
+        self.assertEqual(job.result["percent"], 100)
+        self.assertIn("error", job.result)
+        self.assertTrue(job.result["error"])
+
+    # datetime_localize()
+    @patch("config.TIME_ZONE", "US/Eastern")
+    def test_datetime_localize(self, m):
+        # TODO: this test may be sensitive to Daylight Saving Time and
+        # other such nonsense. Investigate workarounds.
+        from lti import datetime_localize
+
+        utc_time = datetime(2020, 1, 13, 11, tzinfo=timezone("US/Eastern"))
+        local_time = "01/13/2020 11:00 AM"
+
+        localized = datetime_localize(utc_time)
+
+        self.assertIsInstance(localized, str)
+        self.assertEqual(localized, local_time)
+
+    @patch("config.TIME_ZONE", "US/Eastern")
+    def test_datetime_localize_no_tz(self, m):
+        from lti import datetime_localize
+
+        utc_time = datetime(2020, 1, 13, 11)
+        local_time = "01/13/2020 06:00 AM"
+
+        localized = datetime_localize(utc_time)
+
+        self.assertIsInstance(localized, str)
+        self.assertEqual(localized, local_time)
 
     @staticmethod
     def generate_launch_request(
@@ -597,3 +639,58 @@ class LTITests(flask_testing.TestCase):
         signed_url = signature[0]
         new_url = signed_url[len(base_url) :]
         return new_url
+
+
+class UtilTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        logging.disable(logging.CRITICAL)
+
+    @classmethod
+    def tearDownClass(cls):
+        logging.disable(logging.NOTSET)
+
+    # fix_date()
+    def test_fix_date(self):
+        # TODO: this test may be sensitive to Daylight Saving Time and
+        # other such nonsense. Investigate workarounds.
+        from lti import fix_date
+
+        response = fix_date("01/13/2020 11:00 AM")
+        self.assertIsInstance(response, str)
+        self.assertEqual(response, "2020-01-13T11:00:00-05:00")
+
+    def test_fix_date_invalid(self):
+        # TODO: this test may be sensitive to Daylight Saving Time and
+        # other such nonsense. Investigate workarounds.
+        from lti import fix_date
+
+        response = fix_date("01/13/2020 13:00 AM")
+        self.assertIsInstance(response, str)
+        self.assertEqual(response, "")
+
+    # update_job()
+    def test_update_job(self):
+        from lti import update_job
+
+        def fake_job():
+            pass  # pragma:nocover
+
+        queue = Queue(connection=FakeStrictRedis())
+        job = queue.enqueue_call(func=fake_job, args=(1, {}))
+
+        self.assertIsInstance(job.meta, dict)
+        self.assertEqual(len(job.meta), 0)
+
+        update_job(job, 42, "This is the status", "status_code")
+
+        self.assertEqual(len(job.meta), 4)
+
+        self.assertIn("percent", job.meta)
+        self.assertEqual(job.meta["percent"], 42)
+        self.assertIn("status", job.meta)
+        self.assertEqual(job.meta["status"], "status_code")
+        self.assertIn("status_msg", job.meta)
+        self.assertEqual(job.meta["status_msg"], "This is the status")
+        self.assertIn("error", job.meta)
+        self.assertFalse(job.meta["error"])

@@ -24,11 +24,11 @@ from rq.exceptions import NoSuchJobError
 from utils import fix_date, update_job
 import config
 
-conn = redis.from_url(config.REDIS_URL)
-q = Queue(config.RQ_WORKER, connection=conn)
-
 app = Flask(__name__)
 app.config.from_object("config")
+
+app.conn = redis.from_url(config.REDIS_URL)
+app.q = Queue(config.RQ_WORKER, connection=app.conn)
 
 formatter = logging.Formatter(config.LOG_FORMAT)
 handler = RotatingFileHandler(
@@ -77,7 +77,7 @@ def index(lti=lti):
 
 
 @app.route("/status", methods=["GET"])
-def status():
+def status():  # pragma:nocover
     """
     Runs smoke tests and reports status
     """
@@ -124,14 +124,14 @@ def status():
 
     # Check redis
     try:
-        response = conn.echo("test")
+        response = app.conn.echo("test")
         status["checks"]["redis"] = response == "test"
     except ConnectionError:
         app.logger.exception("Redis connection failed.")
 
     # Get redis queue length
     try:
-        status["job_queue"] = len(q.jobs)
+        status["job_queue"] = len(app.q.jobs)
     except ConnectionError:
         app.logger.exception("Unable to get job queue length.")
 
@@ -188,7 +188,7 @@ def show_assignments(course_id, lti=lti):
 @app.route("/jobs/<job_key>/", methods=["GET"])
 def job_status(job_key):
     try:
-        job = Job.fetch(job_key, connection=conn)
+        job = Job.fetch(job_key, connection=app.conn)
     except NoSuchJobError:
         return Response(
             json.dumps(
@@ -236,6 +236,7 @@ def update_assignments_background(course_id, post_data):
         msg = "Error getting course #{}.".format(course_id)
         app.logger.exception(msg)
         update_job(job, 0, msg, "failed", error=True)
+        return job.meta
 
     assignment_field_map = defaultdict(dict)
 
@@ -340,9 +341,10 @@ def update_assignments(course_id, lti=lti):
     :returns: A JSON-formatted response containing a URL for the started job.
     """
 
-    job = q.enqueue_call(
+    job = app.q.enqueue_call(
         func=update_assignments_background, args=(course_id, request.form)
     )
+    update_job(job, 0, "Job Queued.", "queued")
     return Response(
         json.dumps(
             {"update_assignments_job_url": url_for("job_status", job_key=job.get_id())}
@@ -374,9 +376,9 @@ def datetime_localize(utc_datetime, format=config.LOCAL_TIME_FORMAT):
 
 @app.template_test("quiz")
 def is_quiz(assignment):
-    return "online_quiz" in assignment.submission_types
+    return "online_quiz" in getattr(assignment, "submission_types", {})
 
 
 @app.template_test("discussion")
 def is_discussion(assignment):
-    return "discussion_topic" in assignment.submission_types
+    return "discussion_topic" in getattr(assignment, "submission_types", {})
