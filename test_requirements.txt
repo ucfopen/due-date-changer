@@ -2,8 +2,8 @@
 
 black==19.3b0
 blinker==1.4
-coverage==4.5.1
+coverage==4.5.4
 fakeredis==1.0.5
 flake8==3.7.8
 Flask-Testing==0.7.1
-requests-mock==1.5.2
+requests-mock==1.7.0
