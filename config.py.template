@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
-
 DEBUG = False
-SECRET_KEY = ''  # A secret key used by Flask for signing. KEEP THIS SECRET! (e.g. 'JbwLnLgsfxDInozQudc6IFPe0eYecW8f')
+# A secret key used by Flask for signing. KEEP THIS SECRET!
+# (e.g. 'JbwLnLgsfxDInozQudc6IFPe0eYecW8f')
+SECRET_KEY = 'CHANGE_ME'
 
-ALLOWED_CANVAS_DOMAINS = []  # A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
+# A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
+ALLOWED_CANVAS_DOMAINS = []
 
-CANVAS_URL = ''  # Canvas Instance URL ex. `https://example.instructure.com`
-API_KEY = ''  # Canvas API Key
+# Canvas Instance URL ex. `https://example.instructure.com`
+CANVAS_URL = 'https://example.edu'
+API_KEY = 'p@$$w0rd'  # Canvas API Key
 
 PYLTI_CONFIG = {
     'consumers': {

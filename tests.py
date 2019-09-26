@@ -26,8 +26,6 @@ class LTITests(flask_testing.TestCase):
 
         app = lti.app
         app.config["PRESERVE_CONTEXT_ON_EXCEPTION"] = False
-        app.config["API_URL"] = "http://example.edu/api/v1/"
-        app.config["API_KEY"] = "p@$$w0rd"
         return app
 
     @classmethod
