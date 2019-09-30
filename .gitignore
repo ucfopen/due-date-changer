@@ -2,6 +2,8 @@
 *.pyc
 venv/
 env/
+env2/
+env3/
 config.py
 *.log
 .coverage

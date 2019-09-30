@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
 from datetime import datetime
 
 from pytz import timezone
@@ -16,16 +15,16 @@ def fix_date(value):
         return value.isoformat()
     except (ValueError, TypeError):
         # Not a valid time. Just ignore.
-        return ''
+        return ""
 
 
 def update_job(job, percent, status_msg, status, error=False):
     """
     Update job status.
     """
-    job.meta['percent'] = percent
-    job.meta['status'] = status
-    job.meta['status_msg'] = status_msg
-    job.meta['error'] = error
+    job.meta["percent"] = percent
+    job.meta["status"] = status
+    job.meta["status_msg"] = status_msg
+    job.meta["error"] = error
 
     job.save()

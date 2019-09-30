@@ -9,7 +9,7 @@
 
 <h1>Due Date Changer</h1>
 
-<div id="test_box" class="container">
+<div id="main_container" class="container">
 
 	<div id="top_buttons" class="text-right">
 		<button type="button" id="expand_all_btn" class="btn btn-primary btn-sm"><span class="glyphicon glyphicon-plus"></span> Expand All</button>
@@ -37,7 +37,7 @@
 			{% endif %}
 		</div>
 		<div class="col-xs-12 col-sm-6 col-md-3">
-			<label for="{{ assignment.id }}-due_at">Due At:</label>
+			<label for="{{ assignment.id }}-due_at">Due At</label>
 			<div class='input-group date picker picker-due'>
 				<input id="{{ assignment.id }}-due_at" name="{{ assignment.id }}-due_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is due."
 				{% if assignment.due_at_date %}
@@ -50,7 +50,7 @@
 			</div>
 		</div>
 		<div class="col-xs-12 col-sm-6 col-md-1">
-			<label for="{{ assignment.id }}-published">Published:</label><br />
+			<label for="{{ assignment.id }}-published">Published</label><br />
 			<input id="{{ assignment.id }}-published" name="{{ assignment.id }}-published" type="checkbox" class="form-check" data-toggle="toggle" data-on="<span class='glyphicon glyphicon-ok'></span>" data-off="<span class='glyphicon glyphicon-remove'></span>" data-offstyle="danger" data-onstyle="success" data-size="small"
 			{% if assignment.published %}
 				checked
@@ -70,13 +70,12 @@
 			{% endif %}
 		</div>
 		<div class="col-xs-12 col-sm-6 col-md-2 col-md-offset-3">
-			<label>Other Options:</label>
-			<button class="btn btn-primary btn-sm more-button" type="button" data-toggle="collapse" data-target="[data-assignment-id={{ assignment.id }}] .collapse" aria-expanded="false" aria-controls="collapse">More <span class="caret"></span></button>
+			<button class="btn btn-primary btn-sm more-button pull-right" type="button" data-toggle="collapse" data-target="[data-assignment-id={{ assignment.id }}] .collapse" aria-expanded="false" aria-controls="collapse">More Options <span class="caret"></span></button>
 		</div>
 		<span class="clearfix"></span>
 		<div class="collapse">
 			<div class="col-xs-12 col-sm-6 col-md-3">
-				<label for="{{ assignment.id }}-unlock_at">Available At:</label>
+				<label for="{{ assignment.id }}-unlock_at">Available At</label>
 				<div class='input-group date picker unlock-at'>
 					<input id="{{ assignment.id }}-unlock_at" name="{{ assignment.id }}-unlock_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is unlocked."
 					{% if assignment.unlock_at_date %}
@@ -89,7 +88,7 @@
 				</div>
 			</div>
 			<div class="col-xs-12 col-sm-6 col-md-3">
-				<label for="{{ assignment.id }}-lock_at">Available Until:</label>
+				<label for="{{ assignment.id }}-lock_at">Available Until</label>
 				<div class='input-group date picker lock-at'>
 					<input id="{{ assignment.id }}-lock_at" name="{{ assignment.id }}-lock_at" type="text" class="form-control input-sm" title="Date and Time at which the assignment is locked."
 					{% if assignment.lock_at_date %}
@@ -104,7 +103,7 @@
 
 			{% if assignment is quiz %}
 			<div class="col-xs-12 col-sm-6 col-md-3">
-				<label for="{{ assignment.id }}-show_correct_answers_at">Show Answers:</label>
+				<label for="{{ assignment.id }}-show_correct_answers_at">Show Answers</label>
 				<div class='input-group date picker show-at'>
 					<input id="{{ assignment.id }}-show_correct_answers_at" name="{{ assignment.id }}-show_correct_answers_at" type="text" class="form-control input-sm" value="{{ assignment.show_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become available for students to view.">
 					<span class="input-group-addon">
@@ -114,7 +113,7 @@
 			</div>
 
 			<div class="col-xs-12 col-sm-6 col-md-3">
-				<label for="{{ assignment.id }}-hide_correct_answers_at">Hide Answers:</label>
+				<label for="{{ assignment.id }}-hide_correct_answers_at">Hide Answers</label>
 				<div class='input-group date picker hide-at'>
 					<input id="{{ assignment.id }}-hide_correct_answers_at" name="{{ assignment.id }}-hide_correct_answers_at" type="text" class="form-control input-sm" value="{{ assignment.hide_correct_answers_at_date }}" title="Date and Time at which the quiz's correct answers become hidden from students.">
 					<span class="input-group-addon">
@@ -130,9 +129,9 @@
 	<p class="text-center">No Assignments Found</p>
 	</div>
 	{% endfor %}
-	<input class="btn btn-success" type="submit" value="Submit">
+	<div class="row"><input class="btn btn-success pull-right" type="submit" value="Submit"></div>
 	</form>
-</div><!-- /test_box -->
+</div><!-- /main_container -->
 
 <!-- Modal -->
 <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel">
@@ -181,25 +180,26 @@
 		// toggle "more" button
 		$('.collapse').on('shown.bs.collapse', function() {
 			var more_button = $(this).closest('.row').find('.more-button');
-			$(more_button).html('More <span class="dropup"><span class="caret"></span></span>')
+			$(more_button).html('More Options <span class="dropup"><span class="caret"></span></span>');
+			resizeFrame();
 		});
 		$('.collapse').on('hidden.bs.collapse', function() {
 			var more_button = $(this).closest('.row').find('.more-button');
-			$(more_button).html('More <span class="caret"></span>')
+			$(more_button).html('More Options <span class="caret"></span>');
+			resizeFrame();
 		});
-
 
 		// Link pickers
 		$('.row').each(function() {
 			// link available at - available until
 			var unlock_at = $(this).find('.picker.unlock-at');
-			var lock_at = $(this).find('.picker.lock-at')
-			link_pickers(unlock_at, lock_at)
+			var lock_at = $(this).find('.picker.lock-at');
+			link_pickers(unlock_at, lock_at);
 
 			// link show answers - hide answers
 			var show_at = $(this).find('.picker.show-at');
-			var hide_at = $(this).find('.picker.hide-at')
-			link_pickers(show_at, hide_at)
+			var hide_at = $(this).find('.picker.hide-at');
+			link_pickers(show_at, hide_at);
 		});
 
 		function link_pickers(start, end) {
@@ -228,7 +228,7 @@
 		// Reload page after closing window
 		// potential issues with failed requests
 		$('#close_button').on('click', function(e) {
-			location.reload()
+			location.reload();
 		});
 
 		// AJAX submit updates

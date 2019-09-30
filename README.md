@@ -80,7 +80,7 @@ LOG_BACKUP_COUNT = 1
 Create a virtual environment
 
 ```sh
-virtualenv -p python2.7 env
+virtualenv -p python3.7 env
 ```
 
 Source the environment
