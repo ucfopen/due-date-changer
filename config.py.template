@@ -12,12 +12,11 @@ ALLOWED_CANVAS_DOMAINS = []
 CANVAS_URL = "https://example.edu"
 API_KEY = "p@$$w0rd"  # Canvas API Key
 
+LTI_KEY = "key"  # consumer key
+LTI_SECRET = b"secret"  # shared secret must be bytes (b'')
+
 PYLTI_CONFIG = {
-    "consumers": {
-        "key": {  # consumer key
-            "secret": b"secret"  # shared secret must be bytes (b'')
-        }
-    },
+    "consumers": {LTI_KEY: {"secret": LTI_SECRET}},
     "roles": {
         "staff": [
             "urn:lti:instrole:ims/lis/Administrator",
@@ -37,7 +36,7 @@ TIME_ZONE = "US/Eastern"
 LOCAL_TIME_FORMAT = "%m/%d/%Y %I:%M %p"
 
 LOG_FILE = "due_date_changer.log"
-LOG_FORMAT = "%(asctime)s [%(levelname)s] {%(filename)s:%(lineno)d} %(message)s"
+LOG_FORMAT = "%(asctime)s [%(levelname)s] [%(filename)s:%(lineno)d] %(message)s"
 LOG_LEVEL = "WARNING"
 LOG_MAX_BYTES = 1024 * 1024 * 5  # 5 MB
 LOG_BACKUP_COUNT = 1
