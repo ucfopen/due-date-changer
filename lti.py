@@ -125,7 +125,7 @@ def status():  # pragma:nocover
     # Check redis
     try:
         response = app.conn.echo("test")
-        status["checks"]["redis"] = response == "test"
+        status["checks"]["redis"] = response == b"test"
     except ConnectionError:
         app.logger.exception("Redis connection failed.")
 
