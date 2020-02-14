@@ -5,6 +5,10 @@ from __future__ import unicode_literals
 DEBUG = False
 SECRET_KEY = ''  # A secret key used by Flask for signing. KEEP THIS SECRET! (e.g. 'JbwLnLgsfxDInozQudc6IFPe0eYecW8f')
 
+# Chrome 80 SameSite=None; Secure fix
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SAMESITE = "None"
+
 ALLOWED_CANVAS_DOMAINS = []  # A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
 
 CANVAS_URL = ''  # Canvas Instance URL ex. `https://example.instructure.com`
