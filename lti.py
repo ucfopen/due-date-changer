@@ -91,21 +91,21 @@ def status():
     try:
         response = requests.get(url_for('index', _external=True), verify=False)
         status['checks']['index'] = response.text == 'Please contact your System Administrator.'
-    except Exception as e:
+    except Exception:
         app.logger.exception('Index check failed.')
 
     # Check xml
     try:
         response = requests.get(url_for('xml', _external=True), verify=False)
         status['checks']['xml'] = 'application/xml' in response.headers.get('Content-Type')
-    except Exception as e:
+    except Exception:
         app.logger.exception('XML check failed.')
 
     # Check API Key
     try:
         self_user = canvas.get_user('self')
         status['checks']['api_key'] = isinstance(self_user, User)
-    except Exception as e:
+    except Exception:
         app.logger.exception('API check failed.')
 
     # Overall health check - if all checks are True
