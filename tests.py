@@ -1,10 +1,10 @@
-from urllib.parse import urlencode
 import oauthlib.oauth1
 import logging
 
 import flask_testing
-import requests_mock
 from pylti.common import LTI_SESSION_KEY
+import requests_mock
+from six.moves.urllib.parse import urlencode
 
 import lti
 
