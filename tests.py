@@ -14,8 +14,9 @@ class LTITests(flask_testing.TestCase):
     def create_app(self):
         app = lti.app
         app.config["PRESERVE_CONTEXT_ON_EXCEPTION"] = False
-        app.config["API_URL"] = "http://example.edu/api/v1/"
+        app.config["CANVAS_URL"] = "http://example.edu"
         app.config["API_KEY"] = "p@$$w0rd"
+        app.config["DEBUG"] = True
         return app
 
     @classmethod
@@ -30,7 +31,7 @@ class LTITests(flask_testing.TestCase):
         response = self.client.get(self.generate_launch_request("/"))
 
         self.assert_200(response)
-        self.assertEqual(response.data, "Please contact your System Administrator.")
+        self.assertEqual(response.data, b"Please contact your System Administrator.")
 
     def test_xml(self, m):
         response = self.client.get("/lti.xml")

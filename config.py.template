@@ -6,7 +6,7 @@ DEBUG = False
 
 # A secret key used by Flask for signing. KEEP THIS SECRET!
 # (e.g. 'JbwLnLgsfxDInozQudc6IFPe0eYecW8f')
-SECRET_KEY = 'CHANGEME'
+SECRET_KEY = "CHANGEME"
 
 # Chrome 80 SameSite=None; Secure fix
 SESSION_COOKIE_SECURE = True
@@ -15,30 +15,30 @@ SESSION_COOKIE_SAMESITE = "None"
 # A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
 ALLOWED_CANVAS_DOMAINS = []
 
-CANVAS_URL = ''  # Canvas Instance URL ex. `https://example.instructure.com`
-API_KEY = ''  # Canvas API Key
+CANVAS_URL = ""  # Canvas Instance URL ex. `https://example.instructure.com`
+API_KEY = ""  # Canvas API Key
 
 PYLTI_CONFIG = {
-    'consumers': {
-        'key': {  # consumer key
-            'secret': b'secret'  # shared secret must be bytes (b'')
+    "consumers": {
+        "key": {  # consumer key
+            "secret": b"secret"  # shared secret must be bytes (b'')
         }
     },
-    'roles': {
-        'staff': [
-            'urn:lti:instrole:ims/lis/Administrator',
-            'Instructor',
-            'ContentDeveloper',
-            'urn:lti:role:ims/lis/TeachingAssistant'
+    "roles": {
+        "staff": [
+            "urn:lti:instrole:ims/lis/Administrator",
+            "Instructor",
+            "ContentDeveloper",
+            "urn:lti:role:ims/lis/TeachingAssistant",
         ]
-    }
+    },
 }
 
-TIME_ZONE = 'US/Eastern'
-LOCAL_TIME_FORMAT = '%m/%d/%Y %I:%M %p'
+TIME_ZONE = "US/Eastern"
+LOCAL_TIME_FORMAT = "%m/%d/%Y %I:%M %p"
 
-LOG_FILE = 'due_date_changer.log'
-LOG_FORMAT = '%(asctime)s [%(levelname)s] {%(filename)s:%(lineno)d} %(message)s'
-LOG_LEVEL = 'WARNING'
+LOG_FILE = "logs/due_date_changer.log"
+LOG_FORMAT = "%(asctime)s [%(levelname)s] {%(filename)s:%(lineno)d} %(message)s"
+LOG_LEVEL = "WARNING"
 LOG_MAX_BYTES = 1024 * 1024 * 5  # 5 MB
 LOG_BACKUP_COUNT = 1

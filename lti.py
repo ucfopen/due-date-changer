@@ -14,21 +14,20 @@ from canvasapi.exceptions import CanvasException
 from pylti.flask import lti
 from pytz import utc, timezone
 
-import config
-
-
 app = Flask(__name__)
 app.config.from_object("config")
 
-formatter = logging.Formatter(config.LOG_FORMAT)
+formatter = logging.Formatter(app.config["LOG_FORMAT"])
 handler = RotatingFileHandler(
-    config.LOG_FILE, maxBytes=config.LOG_MAX_BYTES, backupCount=config.LOG_BACKUP_COUNT
+    app.config["LOG_FILE"],
+    maxBytes=app.config["LOG_MAX_BYTES"],
+    backupCount=app.config["LOG_BACKUP_COUNT"],
 )
-handler.setLevel(logging.getLevelName(config.LOG_LEVEL))
+handler.setLevel(logging.getLevelName(app.config["LOG_LEVEL"]))
 handler.setFormatter(formatter)
 app.logger.addHandler(handler)
 
-canvas = Canvas(config.CANVAS_URL, config.API_KEY)
+canvas = Canvas(app.config["CANVAS_URL"], app.config["API_KEY"])
 
 
 def error(exception=None):
@@ -46,14 +45,16 @@ def error(exception=None):
 @lti(error=error, request="initial", role="staff", app=app)
 def launch(lti=lti):
     canvas_domain = request.values.get("custom_canvas_api_domain")
-    if canvas_domain not in config.ALLOWED_CANVAS_DOMAINS:
+    if canvas_domain not in app.config["ALLOWED_CANVAS_DOMAINS"]:
         msg = (
             "<p>This tool is only available from the following domain(s):<br/>{}</p>"
             "<p>You attempted to access from this domain:<br/>{}</p>"
         )
         return render_template(
             "error.htm.j2",
-            message=msg.format(", ".join(config.ALLOWED_CANVAS_DOMAINS), canvas_domain),
+            message=msg.format(
+                ", ".join(app.config["ALLOWED_CANVAS_DOMAINS"]), canvas_domain
+            ),
         )
 
     course_id = request.form.get("custom_canvas_course_id")
@@ -76,7 +77,7 @@ def status():
         "checks": {"index": False, "xml": False, "api_key": False},
         "url": url_for("index", _external=True),
         "xml_url": url_for("xml", _external=True),
-        "canvas_url": config.CANVAS_URL,
+        "canvas_url": app.config["CANVAS_URL"],
         "debug": app.debug,
     }
 
@@ -152,7 +153,7 @@ def show_assignments(course_id, lti=lti):
 def update_assignments(course_id, lti=lti):
     def fix_date(value):
         try:
-            value = datetime.strptime(value, config.LOCAL_TIME_FORMAT)
+            value = datetime.strptime(value, app.config["LOCAL_TIME_FORMAT"])
             value = local_tz.localize(value)
             return value.isoformat()
         except (ValueError, TypeError):
@@ -187,7 +188,7 @@ def update_assignments(course_id, lti=lti):
 
     post_data = request.form
 
-    local_tz = timezone(config.TIME_ZONE)
+    local_tz = timezone(app.config["TIME_ZONE"])
     assignment_field_map = defaultdict(dict)
 
     for key, value in post_data.iteritems():
@@ -282,12 +283,12 @@ def xml():
 
 
 @app.template_filter()
-def datetime_localize(utc_datetime, format=config.LOCAL_TIME_FORMAT):
+def datetime_localize(utc_datetime, format=app.config['LOCAL_TIME_FORMAT']):
     if not utc_datetime.tzinfo:
         # Localize to UTC if there is no timezone information.
         utc_datetime = utc.localize(utc_datetime)
 
-    new_tz = timezone(config.TIME_ZONE)
+    new_tz = timezone(app.config['TIME_ZONE'])
     local_datetime = utc_datetime.astimezone(new_tz)
 
     return local_datetime.strftime(format)

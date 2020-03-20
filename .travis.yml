@@ -14,7 +14,7 @@ before_script:
 - mkdir logs; touch logs/due_date_changer.log
 script:
 - flake8 .
-- black --check . --exclude env
+- if [[ $TRAVIS_PYTHON_VERSION != 2.7 ]]; then black --check .; fi
 - mdl .
 - coverage run -m unittest discover
 after_success:
