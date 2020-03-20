@@ -1,0 +1,24 @@
+language: python
+matrix:
+  include:
+  - python: 2.7
+  - python: 3.6
+  - python: 3.7
+  - python: 3.8
+install:
+- pip install -r test_requirements.txt
+- pip install coveralls
+- gem install mdl
+before_script:
+- cp config.py.template config.py
+- mkdir logs; touch logs/due_date_changer.log
+script:
+- flake8 .
+- black --check . --exclude env
+- mdl .
+- coverage run -m unittest discover
+after_success:
+- coveralls
+notifications:
+  slack:
+    secure: LGwCHhml+nD/9xCaR4a8t3IFTHfiKL4QWb1GHXh8ko1nyLYPmcWE5iLqUXtoZoDcsS+eOXMzQwtjeK/bnJYHs+8IIvPzNBIWsNPcOptB6EQY2f4LFye0PELDo+Jw8OgerWtmGcOD4H+SbJGZ1q7Nk4IMVz48d7vDjGQpK/+m+WKR4e+sjS7Y9Ms6gmLwdlPiGhu1bW3n+7Fw7QT1G/+mTL43Rt38SDT+4ebXTJPA4K7KrLbDsWU5x+j2hmxr0dJHzWeT7+Q6fBmf58l8t2WB324q9JEJk1ihY4fWDO2BhKCF1XR07qESbfSn4QIHK/sVkVBC6EnNrLzILt8wN98B4q4RLQVtJVQwP8HZzUzGy6y0+6rySeUeAzurjMwCN7rZgPV5lCjwP+aGPk1YKFl5nJuKEG0iP7pWrZDRZBnk+B8FWOctd8Pu8bNuemyxhT25QM6KAVywCE0PeWJAbL2OlpN/MUsUb9Hku/nSh3NJoAkmY04KB9Gl5W7boIYwE6QWYhwLhtZNLD8vPmWZredFDAlIkn0ANkHQ3G0uU5aR5BvSy6FxRhBSRPX+xOv0YoEPVGOYnAM7cyiVhATVapVTR4EUOZ11VcKcsAYfTgAbNW5C+dxe8pebZPO80MSjMYKcvzr1gYiYhqKb1ZWobL1M5E2akdifA1bwmD9tfCvluZI=
