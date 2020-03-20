@@ -15,8 +15,9 @@ SESSION_COOKIE_SAMESITE = "None"
 # A list of domains that are allowed to use the tool. (e.g. ['example.com', 'example.edu'])
 ALLOWED_CANVAS_DOMAINS = []
 
-CANVAS_URL = ""  # Canvas Instance URL ex. `https://example.instructure.com`
-API_KEY = ""  # Canvas API Key
+# Canvas Instance URL ex. `https://example.instructure.com`
+CANVAS_URL = "https://example.com"
+API_KEY = "CHANGEME"  # Canvas API Key
 
 PYLTI_CONFIG = {
     "consumers": {
