@@ -1,4 +1,7 @@
+[![Build Status](https://travis-ci.org/ucfopen/due-date-changer.svg?branch=master)](https://travis-ci.org/ucfopen/due-date-changer)
+[![Coverage Status](https://coveralls.io/repos/github/ucfopen/due-date-changer/badge.svg?branch=master)](https://coveralls.io/github/ucfopen/due-date-changer?branch=master)
 [![Join UCF Open Slack Discussions](https://ucf-open-slackin.herokuapp.com/badge.svg)](https://ucf-open-slackin.herokuapp.com/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # Due Date Changer
 
