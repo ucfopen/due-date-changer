@@ -32,9 +32,7 @@ app.config.from_object("config")
 
 formatter = logging.Formatter(LOG_FORMAT)
 handler = RotatingFileHandler(
-    LOG_FILE,
-    maxBytes=LOG_MAX_BYTES,
-    backupCount=LOG_BACKUP_COUNT,
+    LOG_FILE, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT
 )
 handler.setLevel(logging.getLevelName(LOG_LEVEL))
 handler.setFormatter(formatter)
@@ -66,9 +64,7 @@ def launch(lti=lti):
         )
         return render_template(
             "error.htm.j2",
-            message=msg.format(
-                ", ".join(ALLOWED_CANVAS_DOMAINS), canvas_domain
-            ),
+            message=msg.format(", ".join(ALLOWED_CANVAS_DOMAINS), canvas_domain),
         )
 
     course_id = request.form.get("custom_canvas_course_id")
@@ -82,7 +78,7 @@ def index(lti=lti):
 
 
 @app.route("/status", methods=["GET"])
-def status():
+def status():  # pragma: no cover
     """
     Runs smoke tests and reports status
     """
@@ -187,7 +183,13 @@ def update_assignments(course_id, lti=lti):
             mimetype="application/json",
         )
 
-    if not request.is_xhr:
+    def is_ajax_request(request):
+        """
+        Determine whether or not a request was made via AJAX.
+        """
+        return request.headers.get("X-Ddc-Ajax", "").lower() == "true"
+
+    if not is_ajax_request(request):
         return render_template("error.htm.j2", message="Non-AJAX requests not allowed.")
 
     try:
