@@ -174,22 +174,27 @@
 			var post_url = $(this).attr('action');
 
 			// TODO: only update assignments that are altered.
-
-			$.post(post_url, $(this).serialize(), function(data) {
-
-				var new_text = "<p>" + data.message + "</p>"
-				if (data.updated.length > 0) {
-					new_text += "<table class='table'><thead><tr><th scope='col'>ID</th><th scope='col'>Title</th><th scope='col'>Type</th></tr></thead><tbody>"
-					for (x in data.updated) {
-						new_text += "<tr><td>" + data.updated[x].id + "</td><td>" + data.updated[x].title + "</td><td>" + data.updated[x].type + "</td></tr>";
+			$.ajax({
+				url: post_url,
+				type: 'post',
+				data: $(this).serialize(),
+				headers: {"X-Ddc-Ajax": true},
+				dataType: 'json',
+				success: function(data) {
+					var new_text = "<p>" + data.message + "</p>"
+					if (data.updated.length > 0) {
+						new_text += "<table class='table'><thead><tr><th scope='col'>ID</th><th scope='col'>Title</th><th scope='col'>Type</th></tr></thead><tbody>"
+						for (x in data.updated) {
+							new_text += "<tr><td>" + data.updated[x].id + "</td><td>" + data.updated[x].title + "</td><td>" + data.updated[x].type + "</td></tr>";
+						}
+						new_text += '</tbody></table><div class="alert alert-info" role="alert"><p>Notice:  If an assignment\'s due date is not updating correctly, please make sure that it has been assigned to "Everyone".</p><p>Please contact support if you need any assistance.</p></div>'
 					}
-					new_text += '</tbody></table><div class="alert alert-info" role="alert"><p>Notice:  If an assignment\'s due date is not updating correctly, please make sure that it has been assigned to "Everyone".</p><p>Please contact support if you need any assistance.</p></div>'
+
+					$('#status_content').html(new_text);
+
+					$('#close_button').prop('disabled', false);
+					$('#close_x').show();
 				}
-
-				$('#status_content').html(new_text);
-
-				$('#close_button').prop('disabled', false);
-				$('#close_x').show();
 			});
 		});
 	</script>

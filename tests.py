@@ -8,9 +8,9 @@ from six.moves.urllib.parse import urlencode
 
 import lti
 
-try:
+try:  # pragma: no cover
     from unittest.mock import patch  # py3
-except ImportError:
+except ImportError:  # pragma: no cover
     from mock import patch  # py2
 
 
@@ -43,7 +43,7 @@ class LTITests(flask_testing.TestCase):
         self.assert_template_used("lti.xml.j2")
         self.assertIn("application/xml", response.content_type)
 
-    @patch('lti.ALLOWED_CANVAS_DOMAINS', [None])
+    @patch("lti.ALLOWED_CANVAS_DOMAINS", [None])
     def test_launch(self, m):
         payload = {"custom_canvas_course_id": "1"}
 
@@ -250,7 +250,7 @@ class LTITests(flask_testing.TestCase):
 
         payload = {"key": "value"}
         headers = {
-            "X-Requested-With": "XMLHttpRequest",
+            "X-Ddc-Ajax": True,
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
@@ -284,7 +284,7 @@ class LTITests(flask_testing.TestCase):
 
         payload = {"key": "value"}
         headers = {
-            "X-Requested-With": "XMLHttpRequest",
+            "X-Ddc-Ajax": True,
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
@@ -329,7 +329,7 @@ class LTITests(flask_testing.TestCase):
 
         payload = {"42-assignment_type": "assignment", "42-published": False}
         headers = {
-            "X-Requested-With": "XMLHttpRequest",
+            "X-Ddc-Ajax": True,
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
@@ -382,7 +382,7 @@ class LTITests(flask_testing.TestCase):
 
         payload = {"42-assignment_type": "assignment", "42-published": False}
         headers = {
-            "X-Requested-With": "XMLHttpRequest",
+            "X-Ddc-Ajax": True,
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
@@ -459,7 +459,7 @@ class LTITests(flask_testing.TestCase):
             "10-due_at": "01/01/2017 10:00 AM",
         }
         headers = {
-            "X-Requested-With": "XMLHttpRequest",
+            "X-Ddc-Ajax": True,
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
@@ -543,7 +543,7 @@ class LTITests(flask_testing.TestCase):
             "10-due_at": "01/01/2017 10:00 AM",
         }
         headers = {
-            "X-Requested-With": "XMLHttpRequest",
+            "X-Ddc-Ajax": True,
             "Content-Type": "application/x-www-form-urlencoded",
         }
 
