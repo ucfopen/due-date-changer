@@ -43,3 +43,5 @@ LOG_FORMAT = "%(asctime)s [%(levelname)s] {%(filename)s:%(lineno)d} %(message)s"
 LOG_LEVEL = "WARNING"
 LOG_MAX_BYTES = 1024 * 1024 * 5  # 5 MB
 LOG_BACKUP_COUNT = 1
+
+GOOGLE_ANALYTICS = ""  # The Google Analytics ID to use.
