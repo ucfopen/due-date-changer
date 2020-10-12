@@ -18,6 +18,7 @@ from config import (
     ALLOWED_CANVAS_DOMAINS,
     API_KEY,
     CANVAS_URL,
+    GOOGLE_ANALYTICS,
     LOCAL_TIME_FORMAT,
     LOG_BACKUP_COUNT,
     LOG_FORMAT,
@@ -40,6 +41,11 @@ app.logger.addHandler(handler)
 
 
 canvas = Canvas(CANVAS_URL, API_KEY)
+
+
+@app.context_processor
+def add_google_analytics_id():
+    return dict(GOOGLE_ANALYTICS=GOOGLE_ANALYTICS)
 
 
 def error(exception=None):
