@@ -4,3 +4,7 @@ canvasapi==0.15.0
 pytz==2019.3
 oauthlib==3.1.0
 Werkzeug>=1.0.0  # Chrome 80 SameSite fix
+gunicorn==20.1.0
+Jinja2==3.0.3
+itsdangerous==2.0.1
+Werkzeug==1.0.1

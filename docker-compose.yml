@@ -1,0 +1,14 @@
+version: '3.1'
+
+services:
+  lti:
+    build:
+      context: .
+      args:
+        - "REQUIREMENTS=${REQUIREMENTS}"
+    volumes:
+      - .:/code
+    ports:
+      - "3109:3109"
+    env_file:
+      - .env
