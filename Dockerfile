@@ -8,4 +8,4 @@ RUN pip install -r /code/$REQUIREMENTS
 WORKDIR /code
 COPY ./ /code/
 EXPOSE 3109
-CMD ["gunicorn", "--conf", "gunicorn_conf.py", "--bind", "0.0.0.0:3109", "views:app"]
+CMD ["gunicorn", "--conf", "gunicorn_conf.py", "--bind", "0.0.0.0:3109", "lti:app"]
