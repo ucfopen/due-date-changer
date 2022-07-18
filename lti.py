@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 from datetime import datetime
 import json
@@ -29,8 +30,8 @@ from config import (
     TIME_ZONE,
 )
 
-#app = Flask(__name__)
-#app.config.from_object("config")
+app = Flask(__name__)
+app.config.from_object("config")
 
 #formatter = logging.Formatter(LOG_FORMAT)
 #handler = RotatingFileHandler(
@@ -41,9 +42,9 @@ from config import (
 #app.logger.addHandler(handler)
 
 handler = logging.StreamHandler(sys.stdout)
-handler.setLevel(INFO)
+handler.setLevel(logging.INFO)
 handler.setFormatter(
-    Formatter(
+    logging.Formatter(
         "%(asctime)s %(levelname)s: %(message)s "
         "[in %(pathname)s: %(lineno)d of %(funcName)s]"
     )
