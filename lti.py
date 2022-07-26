@@ -3,7 +3,6 @@ from collections import defaultdict
 from datetime import datetime
 import json
 import logging
-from logging.handlers import RotatingFileHandler
 import re
 
 from flask import Flask, redirect, render_template, request, url_for, Response
@@ -14,7 +13,6 @@ from pylti.flask import lti
 from pytz import utc, timezone
 import requests
 import six
-import config
 
 from config import (
     ALLOWED_CANVAS_DOMAINS,
@@ -22,24 +20,11 @@ from config import (
     CANVAS_URL,
     GOOGLE_ANALYTICS,
     LOCAL_TIME_FORMAT,
-    LOG_BACKUP_COUNT,
-    LOG_FORMAT,
-    LOG_FILE,
-    LOG_LEVEL,
-    LOG_MAX_BYTES,
     TIME_ZONE,
 )
 
 app = Flask(__name__)
 app.config.from_object("config")
-
-#formatter = logging.Formatter(LOG_FORMAT)
-#handler = RotatingFileHandler(
-#    LOG_FILE, maxBytes=LOG_MAX_BYTES, backupCount=LOG_BACKUP_COUNT
-#)
-#handler.setLevel(logging.getLevelName(LOG_LEVEL))
-#handler.setFormatter(formatter)
-#app.logger.addHandler(handler)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.INFO)
