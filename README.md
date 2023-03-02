@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/ucfopen/due-date-changer.svg?branch=master)](https://travis-ci.org/ucfopen/due-date-changer)
 [![Coverage Status](https://coveralls.io/repos/github/ucfopen/due-date-changer/badge.svg?branch=master)](https://coveralls.io/github/ucfopen/due-date-changer?branch=master)
-[![Join UCF Open Slack Discussions](https://ucf-open-slackin.herokuapp.com/badge.svg)](https://ucf-open-slackin.herokuapp.com/)
+[![Join UCF Open Slack Discussions](https://badgen.net/badge/icon/ucfopen?icon=slack&label=slack&color=pink)](https://dl.ucf.edu/join-ucfopen)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # Due Date Changer
@@ -223,4 +223,4 @@ stats = /tmp/wsgi.py.socket
 
 ## Contact Us
 
-Need help? Have an idea? Just want to say hi? Come join us on the [UCF Open Slack Channel](https://ucf-open-slackin.herokuapp.com) and join the `#due-date-changer` channel!
+Need help? Have an idea? Just want to say hi? Come join us on the [UCF Open Slack Channel](https://dl.ucf.edu/join-ucfopen) and join the `#due-date-changer` channel!
