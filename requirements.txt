@@ -1,4 +1,4 @@
-Flask==1.1.1
+Flask==2.3.2
 canvasapi==0.15.0
 -e git+https://github.com/ucfcdl/pylti.git@roles#egg=PyLTI
 pytz==2019.3
